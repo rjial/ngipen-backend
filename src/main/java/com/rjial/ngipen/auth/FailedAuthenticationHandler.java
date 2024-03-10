@@ -8,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rjial.ngipen.common.Response;
@@ -22,6 +23,7 @@ public class FailedAuthenticationHandler implements AccessDeniedHandler {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,
             AccessDeniedException accessDeniedException) throws IOException, ServletException {

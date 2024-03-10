@@ -8,6 +8,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rjial.ngipen.common.Response;
@@ -22,6 +23,7 @@ public class FailedAuthenticationEntryPoint implements AuthenticationEntryPoint 
     @Autowired
     private ObjectMapper objectMapper;
 
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {

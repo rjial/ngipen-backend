@@ -50,7 +50,7 @@ public class SecurityConfig {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> {
                     request
-                            .requestMatchers("/auth/**", "/public/**").permitAll()
+                            .requestMatchers("/auth/**", "/public/**", "/api/docs/**", "/api/docs/").permitAll()
                             .requestMatchers("/user/**").hasAnyAuthority(Level.USER.toString())
                             .requestMatchers("/admin/**").hasAnyAuthority(Level.ADMIN.toString())
 //                            .requestMatchers("/adminuser/**").hasAnyAuthority("ADMIN", "USER")
