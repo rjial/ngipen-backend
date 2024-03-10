@@ -1,4 +1,4 @@
 package com.rjial.ngipen.common;
 
-public class DataResponse {
+public interface DataResponse {
 }
