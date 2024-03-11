@@ -30,7 +30,6 @@ public class UserController {
     @GetMapping(value = "/detail")
     public ResponseEntity<Response<UserDetailResponse>> userDetail() {
         String name = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info(name);
         User user = userRepository.findByEmail(name).orElseThrow();
         // log.info(user.getEmail());
         UserDetailResponse response = new UserDetailResponse();
