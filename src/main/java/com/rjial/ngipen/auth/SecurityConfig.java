@@ -2,14 +2,12 @@ package com.rjial.ngipen.auth;
 
 import java.io.IOException;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -48,14 +46,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(request -> {
-                    request
-                            .requestMatchers("/auth/**", "/public/**", "/api/docs/**", "/api/docs/", "/event/**").permitAll()
-                            .requestMatchers("/user/**").hasAnyAuthority(Level.USER.toString())
-                            .requestMatchers("/admin/**").hasAnyAuthority(Level.ADMIN.toString())
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers("/auth/**", "/public/**", "/api/docs/**", "/api/docs/", "/event/**").permitAll()
+                        .requestMatchers("/user/**").hasAnyAuthority(Level.USER.toString())
+                        .requestMatchers("/admin/**").hasAnyAuthority(Level.ADMIN.toString())
 //                            .requestMatchers("/adminuser/**").hasAnyAuthority("ADMIN", "USER")
-                            .anyRequest().authenticated();
-                })
+                        .anyRequest().authenticated())
                 .exceptionHandling(exception -> {
                     exception.authenticationEntryPoint(failedAuthenticationEntryPoint);
                     exception.accessDeniedHandler(failedAuthenticationHandler);
@@ -65,32 +61,6 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 ;
         return httpSecurity.build();
-    }
-
-    @Bean
-    public AuthenticationEntryPoint authenticationEntryPoint() {
-        return new AuthenticationEntryPoint() {
-
-            @Override
-            public void commence(HttpServletRequest request, HttpServletResponse response,
-                    AuthenticationException authException) throws IOException, ServletException {
-                throw authException;
-            }
-            
-        };
-    }
-
-    @Bean
-    public AccessDeniedHandler accessDeniedHandler() {
-        return new AccessDeniedHandler() {
-
-            @Override
-            public void handle(HttpServletRequest request, HttpServletResponse response,
-                    AccessDeniedException accessDeniedException) throws IOException, ServletException {
-                throw accessDeniedException;
-            }
-            
-        };
     }
 
     @Bean

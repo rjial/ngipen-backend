@@ -1,6 +1,5 @@
 package com.rjial.ngipen.event;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -16,7 +15,6 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.rjial.ngipen.tiket.JenisTiket;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
