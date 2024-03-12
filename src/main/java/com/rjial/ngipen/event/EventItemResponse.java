@@ -1,6 +1,7 @@
 package com.rjial.ngipen.event;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.rjial.ngipen.common.DataResponse;
 import lombok.Data;
 import lombok.Getter;
@@ -12,6 +13,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class EventItemResponse implements DataResponse {
-    @JsonManagedReference
+    @JsonUnwrapped
     private Event event;
 }

@@ -1,8 +1,6 @@
 package com.rjial.ngipen.event;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import com.rjial.ngipen.common.DataResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,6 +14,6 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 public class ListEventResponse implements DataResponse {
-    @JsonProperty("event_list")
+    @JsonValue
     private List<Event> eventList;
 }

@@ -1,5 +1,7 @@
 package com.rjial.ngipen.event;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.rjial.ngipen.tiket.JenisTiket;
 import lombok.Data;
 import lombok.Getter;
@@ -13,5 +15,6 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public class EventJenisTiketResponse {
+    @JsonValue
     private List<JenisTiket> jenisTikets;
 }
