@@ -79,9 +79,11 @@ public class AuthService {
         try {
             User user = userRepository.findByEmail(userEmail).orElseThrow();
             if(jwtUtils.isTokenValid(request.getToken(), user)) {
-                String token = jwtUtils.generateToken(user);
+//                String token = jwtUtils.generateToken(user);
+                String refreshToken = jwtUtils.generateRefreshToken(new HashMap<>(), user);
                 RefreshTokenResponse refreshTokenResponse = new RefreshTokenResponse();
-                refreshTokenResponse.setToken(token);
+                refreshTokenResponse.setToken(request.getToken());
+                refreshTokenResponse.setRefreshToken(refreshToken);
                 response.setData(refreshTokenResponse);
                 response.setMessage("Token successfully refreshed");
                 response.setStatusCode(200L);
