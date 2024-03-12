@@ -1,11 +1,8 @@
 package com.rjial.ngipen.tiket;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.rjial.ngipen.event.Event;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -24,4 +21,8 @@ public class JenisTiket {
     private Long id;
     @Column(name = "nama_jenistiket")
     private String nama;
+    @ManyToOne
+    @JoinColumn(name = "id_event", referencedColumnName = "id_event")
+    @JsonIgnore
+    private Event event;
 }
