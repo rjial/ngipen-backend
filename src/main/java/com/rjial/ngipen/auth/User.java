@@ -1,5 +1,7 @@
 package com.rjial.ngipen.auth;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.rjial.ngipen.event.Event;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -42,6 +44,10 @@ public class User implements UserDetails {
     @NonNull
     @Enumerated(EnumType.STRING)
     private Level level;
+
+    @OneToMany(mappedBy = "pemegangEvent")
+    @JsonBackReference
+    private List<Event> events;
 
     @JsonIgnore
     @Override

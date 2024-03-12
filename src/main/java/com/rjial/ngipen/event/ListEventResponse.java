@@ -1,5 +1,7 @@
 package com.rjial.ngipen.event;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rjial.ngipen.common.DataResponse;
 import lombok.AllArgsConstructor;

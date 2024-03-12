@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.tiket.JenisTiket;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
@@ -37,9 +39,8 @@ public class Event {
     @NonNull
     @Column(name = "nama_event")
     private String name;
-    @NonNull
     @Column(name = "uid_event")
-    private UUID uuid;
+    private UUID uuid = UUID.randomUUID();
     @NonNull
     @Column(name = "tanggalawal_event")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -79,5 +80,10 @@ public class Event {
     @OneToMany(mappedBy = "event")
     @JsonIgnore
     private List<JenisTiket> jenisTikets;
+
+    @ManyToOne
+    @JoinColumn(name = "id_user", referencedColumnName = "id_user")
+    @JsonManagedReference
+    private User pemegangEvent;
 
 }

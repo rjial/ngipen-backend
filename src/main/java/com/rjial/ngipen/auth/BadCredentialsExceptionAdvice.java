@@ -18,6 +18,7 @@ public class BadCredentialsExceptionAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class, AccessDeniedException.class})
     public ResponseEntity<Response> handleBadCredentialException(Exception exc) {
+        exc.printStackTrace();
         Response res = new Response<>();
         res.setStatusCode(Long.valueOf(HttpStatus.BAD_REQUEST.value()));
         res.setMessage(exc.getMessage());
