@@ -47,6 +47,7 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "pemegangEvent")
     @JsonBackReference
+    @JsonIgnore
     private List<Event> events;
 
     @JsonIgnore
