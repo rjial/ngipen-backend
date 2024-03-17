@@ -16,6 +16,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.rjial.ngipen.auth.User;
+import com.rjial.ngipen.auth.UserSerializer;
 import com.rjial.ngipen.tiket.JenisTiket;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
@@ -84,6 +85,7 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "id_user", referencedColumnName = "id_user")
     @JsonManagedReference
+    @JsonSerialize(using = UserSerializer.class)
     private User pemegangEvent;
 
 }

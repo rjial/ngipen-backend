@@ -21,6 +21,9 @@ public class JenisTiket {
     private Long id;
     @Column(name = "nama_jenistiket")
     private String nama;
+    @Column(name = "harga_jenistiket")
+    private Long harga;
+
     @ManyToOne
     @JoinColumn(name = "id_event", referencedColumnName = "id_event")
     @JsonIgnore

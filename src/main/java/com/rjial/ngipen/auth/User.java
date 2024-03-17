@@ -24,6 +24,7 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_user")
+    @JsonIgnore
     private Long id;
     @NonNull
     @Column(name = "email_user")
