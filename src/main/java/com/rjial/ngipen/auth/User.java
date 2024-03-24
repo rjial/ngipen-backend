@@ -51,6 +51,14 @@ public class User implements UserDetails {
     @JsonIgnore
     private List<Event> events;
 
+    public String firstName() {
+        return name.split(" ")[0];
+    }
+
+    public String lastName() {
+        return name.replace(firstName() + " ", "");
+    }
+
     @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

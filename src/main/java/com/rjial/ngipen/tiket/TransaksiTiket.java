@@ -26,6 +26,4 @@ public class TransaksiTiket {
     @Column(name = "tanggaltransaksi_transaksitiket")
     private Date tanggalTransaksi;
 
-    @OneToOne(mappedBy = "transaksiTiket")
-    private Tiket tiket;
 }

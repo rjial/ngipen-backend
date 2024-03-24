@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.rjial.ngipen.auth.User;
 
+import com.rjial.ngipen.payment.PaymentTransaction;
 import io.micrometer.common.lang.NonNull;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -38,7 +39,7 @@ public class Tiket {
     @JoinColumn(name = "id_jenistiket", referencedColumnName = "id_jenistiket")
     private JenisTiket jenisTiket;
 
-    @OneToOne
-    @JoinColumn(name = "id_transaksitiket")
-    private TransaksiTiket transaksiTiket;
+    @ManyToOne
+    @JoinColumn(name = "id_paymenttransaction", referencedColumnName = "id_paymenttransaction")
+    private PaymentTransaction paymentTransaction;
 }
