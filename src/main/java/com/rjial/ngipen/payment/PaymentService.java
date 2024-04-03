@@ -142,14 +142,14 @@ public class PaymentService {
                 if (request.getTransactionStatus().equals("capture")) {
                     if (request.getFraudStatus().equals("accept")) {
                         paymentTransactionByUuid.getPaymentHistories().forEach(paymentHistory -> {
-                            saveTiket(paymentHistory, paymentTransactionByUuid);
+                            saveTiket(paymentHistory, paymentTransactionByUuid, paymentHistory.getTotal());
                         });
                         paymentTransactionByUuid.setStatus(PaymentStatus.ACCEPTED);
                     }
                 } else if (request.getTransactionStatus().equals("settlement")) {
                     if (!paymentTransactionByUuid.getPaymentHistories().isEmpty()) {
                         for (PaymentHistory paymentHistory : paymentTransactionByUuid.getPaymentHistories()) {
-                            saveTiket(paymentHistory, paymentTransactionByUuid);
+                            saveTiket(paymentHistory, paymentTransactionByUuid, paymentHistory.getTotal());
                         }
                     }
                     paymentTransactionByUuid.setStatus(PaymentStatus.ACCEPTED);
@@ -170,13 +170,25 @@ public class PaymentService {
         }
         return response;
     }
-    private Tiket saveTiket(PaymentHistory paymentHistory, PaymentTransaction paymentTransactionByUuid) {
-        Tiket tiket = new Tiket();
-        tiket.setJenisTiket(paymentHistory.getJenisTiket());
-        tiket.setUser(paymentHistory.getUser());
-        tiket.setUuid(UUID.randomUUID());
-        tiket.setPaymentTransaction(paymentTransactionByUuid);
-        tiket.setStatusTiket(false);
-        return tiketRepository.save(tiket);
+    private List<Tiket> saveTiket(PaymentHistory paymentHistory, PaymentTransaction paymentTransactionByUuid, int total) {
+        List<Tiket> allByPaymentTransaction = tiketRepository.findAllByPaymentTransaction(paymentTransactionByUuid);
+        if (allByPaymentTransaction.size() == total) {
+            return new ArrayList<>();
+        }
+        List<Tiket> savedTikets = new ArrayList<>();
+        for(int i = 0; i < total; i++) {
+            Tiket tiket = new Tiket();
+            tiket.setJenisTiket(paymentHistory.getJenisTiket());
+            tiket.setPaymentHistory(paymentHistory);
+            tiket.setUser(paymentHistory.getUser());
+            tiket.setUuid(UUID.randomUUID());
+            tiket.setPaymentTransaction(paymentTransactionByUuid);
+            tiket.setStatusTiket(false);
+            Tiket savedTiket = tiketRepository.save(tiket);
+            if (savedTiket.getId() > 0) {
+                savedTikets.add(savedTiket);
+            }
+        }
+        return savedTikets;
     }
 }

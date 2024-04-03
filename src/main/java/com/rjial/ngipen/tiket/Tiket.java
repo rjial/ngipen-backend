@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.rjial.ngipen.auth.User;
 
+import com.rjial.ngipen.payment.PaymentHistory;
 import com.rjial.ngipen.payment.PaymentTransaction;
 import io.micrometer.common.lang.NonNull;
 import jakarta.persistence.*;
@@ -42,4 +43,8 @@ public class Tiket {
     @ManyToOne
     @JoinColumn(name = "id_paymenttransaction", referencedColumnName = "id_paymenttransaction")
     private PaymentTransaction paymentTransaction;
+
+    @ManyToOne
+    @JoinColumn(name = "id_paymenthistory", referencedColumnName = "id_paymenthistory")
+    private PaymentHistory paymentHistory;
 }
