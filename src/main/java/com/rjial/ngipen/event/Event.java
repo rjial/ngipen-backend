@@ -77,6 +77,9 @@ public class Event {
     @NonNull
     @Column(name = "persen_event")
     private Long persen;
+    @NonNull
+    @Column(name = "verify_event")
+    private Boolean verifyEvent = false;
 
     @OneToMany(mappedBy = "event")
     @JsonIgnore

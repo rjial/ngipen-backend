@@ -85,6 +85,7 @@ public class EventService {
             event.setDesc(request.getDesc());
             event.setPersen(request.getPersen());
             event.setPemegangEvent(user);
+            event.setVerifyEvent(false);
             Event eventSaved = eventRepository.save(event);
             if (eventSaved.getId() > 0) {
                 response.setMessage("Event successfully created");
@@ -98,6 +99,19 @@ public class EventService {
             return response;
         } catch (Exception exc) {
             throw new Exception("Event failed created", exc);
+        }
+    }
+
+    public EventItemResponse verifyEvent(String uuid, User user) throws Exception {
+        if (!user.getLevel().equals(Level.ADMIN)) throw new BadCredentialsException("Hanya administrator saja yang boleh menverifikasi event ini");
+        try {
+            Event eventByUuid = eventRepository.findEventByUuid(UUID.fromString(uuid));
+            eventByUuid.setVerifyEvent(true);
+            EventItemResponse eventItemResponse = new EventItemResponse();
+            eventItemResponse.setEvent(eventRepository.save(eventByUuid));
+            return eventItemResponse;
+        } catch (Exception exc) {
+            throw new Exception("Gagal menverifikasi event", exc);
         }
     }
 }

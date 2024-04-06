@@ -4,6 +4,8 @@ import com.rjial.ngipen.auth.Level;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,5 +42,14 @@ public class EventController {
     @PostMapping("")
     public ResponseEntity<Response<EventItemResponse>> insertEvent(@AuthenticationPrincipal User user, @RequestBody AddEventRequest request) throws Exception {
         return new ResponseEntity<>(eventService.insertEvent(request, user), HttpStatus.OK);
+    }
+
+    @GetMapping("/{uuid}/verify")
+    public ResponseEntity<Response<EventItemResponse>> verifyEvent(@AuthenticationPrincipal User user, @PathVariable String uuid) throws Exception {
+        Response<EventItemResponse> eventItemResponse = new Response<>();
+        eventItemResponse.setData(eventService.verifyEvent(uuid, user));
+        eventItemResponse.setMessage("Berhasil menverifikasi event");
+        eventItemResponse.setStatusCode((long) HttpStatus.OK.value());
+        return ResponseEntity.ok(eventItemResponse);
     }
 }
