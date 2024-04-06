@@ -54,4 +54,24 @@ public class TiketService {
             throw new DataIntegrityViolationException("Tiket is not found", exc);
         }
     }
+
+    public TiketVerifikasiResponse verifyTiket(String uuid, User user) {
+        try {
+            Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
+            if (tiket.getJenisTiket().getEvent().getPemegangEvent().getId().equals(user.getId())) throw new BadCredentialsException("Anda bukan pemilik event dari tiket ini!");
+            tiket.setStatusTiket(true);
+            Tiket savedTiket = tiketRepository.save(tiket);
+            if (savedTiket.getStatusTiket()) {
+                TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama());
+                TiketVerifikasiResponse verifiedResponse = new TiketVerifikasiResponse();
+                verifiedResponse.setStatusVerifikasi(savedTiket.getStatusTiket());
+                verifiedResponse.setTiketItemListResponse(tiketItemListResponse);
+                return verifiedResponse;
+            } else {
+                throw new DataIntegrityViolationException("Gagal menverifikasi tiket");
+            }
+        } catch(Exception exc) {
+            throw new DataIntegrityViolationException("Gagal menverifikasi tiket", exc);
+        }
+    }
 }

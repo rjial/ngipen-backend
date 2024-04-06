@@ -38,4 +38,14 @@ public class TiketController {
         tiketItemListResponse.setStatusCode((long) HttpStatus.OK.value());
         return ResponseEntity.ok(tiketItemListResponse);
     }
+
+    @PostMapping("/verify")
+    public ResponseEntity<Response<TiketVerifikasiResponse>> verifyTiket(@AuthenticationPrincipal User user, @RequestBody TiketVerifikasiRequest request) {
+        TiketVerifikasiResponse verifiedTiket = tiketService.verifyTiket(request.getUuid(), user);
+        Response<TiketVerifikasiResponse> tiketResponse = new Response<>();
+        tiketResponse.setData(verifiedTiket);
+        tiketResponse.setMessage("Tiket berhasil diverifikasi");
+        tiketResponse.setStatusCode((long) HttpStatus.OK.value());
+        return ResponseEntity.ok(tiketResponse);
+    }
 }
