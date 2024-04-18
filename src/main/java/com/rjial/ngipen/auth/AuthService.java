@@ -97,4 +97,14 @@ public class AuthService {
         }
         return response;
     }
+
+    public UserDetailResponse getAuthUserDetail(User user) {
+        try {
+            UserDetailResponse userDetailResponse = new UserDetailResponse();
+            userDetailResponse.setUser(user);
+            return userDetailResponse;
+        } catch (Exception exc) {
+            throw new BadCredentialsException("Invalid authentication");
+        }
+    }
 }

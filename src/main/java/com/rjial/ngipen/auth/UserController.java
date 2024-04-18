@@ -29,7 +29,7 @@ public class UserController {
     public ResponseEntity<Response<UserDetailResponse>> userDetail() {
         String name = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(name).orElseThrow();
-        // log.info(user.getEmail());
+         log.info(user.getEmail());
         UserDetailResponse response = new UserDetailResponse();
         response.setUser(user);
         Response<UserDetailResponse> response1 = new Response<>();
