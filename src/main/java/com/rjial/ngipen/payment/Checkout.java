@@ -35,22 +35,22 @@ public class Checkout {
     @NonNull
     @ManyToOne
     @JoinColumn(name = "id_event", referencedColumnName = "id_event")
-//    @JsonSerialize(using = EventSerializer.class)
-//    @Schema(type = "string", example = "Utsuru 8.5")
+    @JsonSerialize(using = EventSerializer.class)
+    @Schema(type = "string", example = "Utsuru 8.5")
     private Event event;
 
     @ManyToOne
     @JoinColumn(name = "id_jenistiket", referencedColumnName = "id_jenistiket")
     @NonNull
-//    @JsonSerialize(using = JenisTiketSerializer.class)
-//    @Schema(type = "string", example = "Subsidi")
+    @JsonSerialize(using = JenisTiketSerializer.class)
+    @Schema(type = "string", example = "Subsidi")
     private JenisTiket jenisTiket;
 
     @ManyToOne
     @JoinColumn(name = "id_user", referencedColumnName = "id_user")
     @NonNull
-//    @JsonSerialize(using = UserSerializer.class)
-//    @Schema(type = "string", example = "Lorem Ipsum")
+    @JsonSerialize(using = UserSerializer.class)
+    @Schema(type = "string", example = "Lorem Ipsum")
     private User user;
 
 
