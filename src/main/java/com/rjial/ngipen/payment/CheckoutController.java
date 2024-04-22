@@ -2,6 +2,8 @@ package com.rjial.ngipen.payment;
 
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/checkout")
+@Slf4j
 public class CheckoutController {
 
     @Autowired
@@ -23,7 +26,7 @@ public class CheckoutController {
     }
 
     @PutMapping("/{uuid}")
-    public ResponseEntity<Response<Checkout>> updateCheckout(@AuthenticationPrincipal User user, @RequestBody CheckoutUpdateRequest request) {
+    public ResponseEntity<Response<Checkout>> updateCheckout(@AuthenticationPrincipal User user, @RequestBody CheckoutUpdateRequest request) throws BadRequestException {
         return new ResponseEntity<>(checkoutService.updateCheckout(request.getTotal(), UUID.fromString(request.getUuid()), user), HttpStatus.OK);
     }
 

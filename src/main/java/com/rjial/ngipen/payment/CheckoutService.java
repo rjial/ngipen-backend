@@ -2,6 +2,7 @@ package com.rjial.ngipen.payment;
 
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -27,15 +28,23 @@ public class CheckoutService {
         return response;
     }
 
-    public Response<Checkout> updateCheckout(int total, UUID uuid, User user) {
+    public Response<Checkout> updateCheckout(int total, UUID uuid, User user) throws BadRequestException {
         Response<Checkout> response = new Response<>();
         Checkout checkout = checkoutRepository.findCheckoutByUuid(uuid).orElseThrow();
-        if (checkout.getUser().equals(user)) {
+        if (checkout.getUser().getId().equals(user.getId())) {
+            if (total < 0) {
+                throw new BadRequestException("Total shouldn't be less than 0");
+            }
             checkout.setTotal(total);
+            Checkout savedCheckout = checkoutRepository.save(checkout);
+            if (savedCheckout.getId() > 0) {
+                response.setData(savedCheckout);
+            } else {
+                throw new BadRequestException("Checkout failed to updated");
+            }
         } else {
             throw new BadCredentialsException("Anda bukan pemilik item checkout ini!");
         }
-        response.setData(checkout);
         response.setMessage("Item checkout berhasil diupdate");
         response.setStatusCode((long) HttpStatus.OK.value());
         return response;

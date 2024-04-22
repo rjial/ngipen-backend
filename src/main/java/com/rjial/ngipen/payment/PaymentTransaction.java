@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.rjial.ngipen.auth.User;
+import com.rjial.ngipen.auth.UserSerializer;
 import com.rjial.ngipen.tiket.Tiket;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -41,6 +42,9 @@ public class PaymentTransaction {
     @Column(name = "total_paymenttransaction")
     private Integer total;
 
+    @Column(name = "snaptoken_paymenttransaction")
+    private String snapToken;
+
     @Column(name = "tanggal_paymenttransaction")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
@@ -59,13 +63,16 @@ public class PaymentTransaction {
 
     @ManyToOne
     @JoinColumn(name = "id_user", referencedColumnName = "id_user")
+    @JsonSerialize(using = UserSerializer.class)
     private User user;
 
     @OneToOne
     @JoinColumn(name = "id_paymentgateway")
+    @JsonIgnore
     private PaymentGatewayInformation paymentGatewayInformation;
 
     @OneToMany(mappedBy = "paymentTransaction")
+    @JsonIgnore
     private List<Tiket> tikets;
 
 }

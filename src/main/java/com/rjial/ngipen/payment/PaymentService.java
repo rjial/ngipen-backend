@@ -58,8 +58,12 @@ public class PaymentService {
             request.getOrders().forEach(uuid -> {
                 Checkout checkout = checkoutRepository.findCheckoutByUuid(UUID.fromString(uuid)).orElseThrow();
                 if (!checkout.getUser().getId().equals(user.getId())) throw new BadCredentialsException("Anda bukan pemilik item checkout ini!");
-                checkouts.add(checkout);
-                total.set(total.get() + (checkout.getTotal() * checkout.getJenisTiket().getHarga()));
+                if (checkout.getTotal() > 0) {
+                    checkouts.add(checkout);
+                    total.set(total.get() + (checkout.getTotal() * checkout.getJenisTiket().getHarga()));
+                } else {
+                    checkoutRepository.delete(checkout);
+                }
             });
             UUID paymentUUID = UUID.randomUUID();
             PaymentTransaction paymentTransaction = new PaymentTransaction();
@@ -83,6 +87,7 @@ public class PaymentService {
             midtransParams.put("transaction_details", midtransTransactions);
             midtransParams.put("credit_card", midtransCreditCard);
             String snapTransactionToken = SnapApi.createTransactionToken(midtransParams, snapConfig);
+            paymentTransaction.setSnapToken(snapTransactionToken);
             PaymentTransaction savedPayment = paymentTransactionRepository.save(paymentTransaction);
             checkouts.forEach(checkout -> {
                 PaymentHistory paymentHistory = new PaymentHistory();

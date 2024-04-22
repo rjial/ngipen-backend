@@ -42,8 +42,8 @@ public class Checkout {
     @ManyToOne
     @JoinColumn(name = "id_jenistiket", referencedColumnName = "id_jenistiket")
     @NonNull
-    @JsonSerialize(using = JenisTiketSerializer.class)
-    @Schema(type = "string", example = "Subsidi")
+//    @JsonSerialize(using = JenisTiketSerializer.class)
+//    @Schema(type = "string")
     private JenisTiket jenisTiket;
 
     @ManyToOne

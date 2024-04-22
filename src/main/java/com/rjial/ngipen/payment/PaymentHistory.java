@@ -1,8 +1,12 @@
 package com.rjial.ngipen.payment;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.rjial.ngipen.auth.User;
+import com.rjial.ngipen.auth.UserSerializer;
 import com.rjial.ngipen.event.Event;
+import com.rjial.ngipen.event.EventSerializer;
 import com.rjial.ngipen.tiket.JenisTiket;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,8 +29,8 @@ public class PaymentHistory {
     @NonNull
     @ManyToOne
     @JoinColumn(name = "id_event", referencedColumnName = "id_event")
-//    @JsonSerialize(using = EventSerializer.class)
-//    @Schema(type = "string", example = "Utsuru 8.5")
+    @JsonSerialize(using = EventSerializer.class)
+    @Schema(type = "string", example = "Utsuru 8.5")
     private Event event;
 
     @ManyToOne
@@ -39,8 +43,8 @@ public class PaymentHistory {
     @ManyToOne
     @JoinColumn(name = "id_user", referencedColumnName = "id_user")
     @NonNull
-//    @JsonSerialize(using = UserSerializer.class)
-//    @Schema(type = "string", example = "Lorem Ipsum")
+    @JsonSerialize(using = UserSerializer.class)
+    @Schema(type = "string", example = "Lorem Ipsum")
     private User user;
 
     @ManyToOne
