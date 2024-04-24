@@ -14,4 +14,5 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 //    @Query(value = "select pytr from PaymentTransaction pytr join pytr.")
 //    List<PaymentTransaction> findPaymentTransactionByUser(@Param("user")User user);
         Optional<PaymentTransaction> findPaymentTransactionByUuid(UUID uuid);
+        List<PaymentTransaction> findPaymentTransactionByUser(User user);
 }

@@ -51,7 +51,7 @@ public class PaymentService {
                 .setClientKey("SB-Mid-client-vCLfQi6IOtcCIumG")
                 .setIsProduction(false)
                 .enableLog(true)
-                .setPaymentOverrideNotification("https://webhook.site/72c99b0e-eecc-4ab0-ad2c-e5a9fbb5d86a")
+                .setPaymentOverrideNotification("https://webhook.site/c30893b3-aa44-4590-9342-ee7dfa7d2118")
                 .build();
         try {
             AtomicLong total = new AtomicLong(0);
@@ -120,16 +120,27 @@ public class PaymentService {
         return response;
     }
 
-    public Response<List<PaymentHistory>> getPaymentFromUser(User user) {
-        Response<List<PaymentHistory>> response = new Response<>();
+    public Response<List<PaymentTransaction>> getPaymentFromUser(User user) {
+        Response<List<PaymentTransaction>> response = new Response<>();
         try {
-            response.setData(paymentHistoryRepository.findAllByUser(user));
-            response.setMessage("Listing payment history successfully");
+            response.setData(paymentTransactionRepository.findPaymentTransactionByUser(user));
+            response.setMessage("Listing payment transaction successfully");
             response.setStatusCode((long) HttpStatus.OK.value());
         } catch (Exception exc) {
-            throw new DataIntegrityViolationException("Listing payment history failed", exc);
+            throw new DataIntegrityViolationException("Listing payment transaction failed", exc);
         }
         return response;
+    }
+    public PaymentTransaction getPaymentDetail(String uuid, User user) {
+        try {
+            PaymentTransaction paymentTransaction = paymentTransactionRepository.findPaymentTransactionByUuid(UUID.fromString(uuid)).orElseThrow();
+            if (!paymentTransaction.getUser().getId().equals(user.getId())) {
+                throw new DataIntegrityViolationException("Fetching payment transaction failed");
+            }
+            return paymentTransaction;
+        } catch (Exception exc) {
+            throw new DataIntegrityViolationException("Fetching payment transaction failed", exc);
+        }
     }
 
     public Response<PaymentGatewayNotificationResponse> notification(PaymentGatewayNotificationRequest request) {

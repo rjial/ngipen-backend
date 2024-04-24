@@ -2,8 +2,11 @@ package com.rjial.ngipen.tiket;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.rjial.ngipen.auth.User;
 
+import com.rjial.ngipen.auth.UserSerializer;
 import com.rjial.ngipen.payment.PaymentHistory;
 import com.rjial.ngipen.payment.PaymentTransaction;
 import io.micrometer.common.lang.NonNull;
@@ -34,6 +37,7 @@ public class Tiket {
 
     @ManyToOne
     @JoinColumn(name = "id_user", referencedColumnName = "id_user")
+    @JsonSerialize(using = UserSerializer.class)
     private User user;
 
     @ManyToOne
@@ -42,9 +46,11 @@ public class Tiket {
 
     @ManyToOne
     @JoinColumn(name = "id_paymenttransaction", referencedColumnName = "id_paymenttransaction")
+    @JsonIgnore
     private PaymentTransaction paymentTransaction;
 
     @ManyToOne
     @JoinColumn(name = "id_paymenthistory", referencedColumnName = "id_paymenthistory")
+    @JsonIgnore
     private PaymentHistory paymentHistory;
 }

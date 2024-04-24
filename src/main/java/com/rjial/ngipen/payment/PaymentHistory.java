@@ -1,5 +1,6 @@
 package com.rjial.ngipen.payment;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.auth.UserSerializer;
@@ -49,5 +50,6 @@ public class PaymentHistory {
 
     @ManyToOne
     @JoinColumn(name = "id_paymenttransaction", referencedColumnName = "id_paymenttransaction")
+    @JsonIgnore
     private PaymentTransaction paymentTransaction;
 }

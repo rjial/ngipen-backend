@@ -72,7 +72,9 @@ public class PaymentTransaction {
     private PaymentGatewayInformation paymentGatewayInformation;
 
     @OneToMany(mappedBy = "paymentTransaction")
-    @JsonIgnore
     private List<Tiket> tikets;
+
+    @OneToMany(mappedBy = "paymentTransaction")
+    private List<PaymentHistory> paymentTransactions;
 
 }
