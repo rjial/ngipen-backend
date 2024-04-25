@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rjial.ngipen.common.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,6 +26,21 @@ public class UserController {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @GetMapping("")
+    public ResponseEntity<Response<Page<User>>> findAllUser(@RequestParam("page") int page, @RequestParam("size") int size, @AuthenticationPrincipal User user) {
+        Response<Page<User>> response = new Response<>();
+        try {
+            Page<User> users = userService.findAll(PageRequest.of(page, size), user);
+            response.setData(users);
+            response.setMessage("Success");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to load users : " + e.getMessage(),e);
+        }
+    }
 
     @GetMapping(value = "/detail")
     public ResponseEntity<Response<UserDetailResponse>> userDetail() {

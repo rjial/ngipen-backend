@@ -1,14 +1,19 @@
 package com.rjial.ngipen.auth;
 
 import com.rjial.ngipen.common.Response;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class UserService {
     @Autowired
     private UserRepository userRepository;
@@ -68,5 +73,15 @@ public class UserService {
             throw new Exception("User failed updated : ", exc);
         }
         return response;
+    }
+
+    public Page<User> findAll(Pageable pageable, User user) throws Exception {
+//        if (!(user.getLevel().equals(Level.ADMIN))) throw new BadCredentialsException("Anda bukan admin");
+        try {
+            Page<User> findAllUser = userRepository.findAll(pageable);
+            return new PageImpl<>(findAllUser.getContent(), pageable, findAllUser.getTotalElements());
+        } catch (Exception exception) {
+            throw new Exception("Failed to load users : " + exception.getMessage(), exception);
+        }
     }
 }

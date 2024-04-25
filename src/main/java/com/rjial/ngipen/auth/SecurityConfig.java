@@ -40,8 +40,6 @@ public class SecurityConfig {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/auth/login", "/auth/register", "/auth/refresh", "/public/**", "/api/docs/**", "/api/docs/", "/event/**", "/payment/notification", "/actuator/**").permitAll()
-                        .requestMatchers("/user/**").hasAnyAuthority(Level.USER.toString())
-                        .requestMatchers("/admin/**").hasAnyAuthority(Level.ADMIN.toString())
 //                            .requestMatchers("/adminuser/**").hasAnyAuthority("ADMIN", "USER")
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> {
