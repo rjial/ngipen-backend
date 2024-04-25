@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Getter
@@ -45,6 +46,9 @@ public class User implements UserDetails {
     @NonNull
     @Enumerated(EnumType.STRING)
     private Level level;
+    @NonNull
+    @Column(name = "uuid")
+    private UUID uuid = UUID.randomUUID();
 
     @OneToMany(mappedBy = "pemegangEvent")
     @JsonBackReference
