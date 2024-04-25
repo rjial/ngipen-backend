@@ -7,6 +7,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -29,15 +30,15 @@ public class TiketService {
 //        PageRequest pageRequest = PageRequest.of(page, size);
         List<Tiket> allByUser = tiketRepository.findAllByUser(user);
         List<TiketItemListResponse> collect = allByUser.stream().map(item -> {
-            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama());
+            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir());
         }).toList();
         return new TiketListResponse(collect);
     }
 
-    public TiketPageListResponse getAllTiket(User user, PageRequest pageRequest) {
-        Page<Tiket> allByUser = tiketRepository.findAllByUser(user, pageRequest);
+    public TiketPageListResponse getAllTiket(User user, Pageable pageable) {
+        Page<Tiket> allByUser = tiketRepository.findAllByUser(user, pageable);
         Page<TiketItemListResponse> map = allByUser.map(item -> {
-            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama());
+            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir());
         });
         return new TiketPageListResponse(map);
     }
@@ -47,7 +48,7 @@ public class TiketService {
     public TiketItemListResponse getTiketFromUUID(String uuid, User user) {
         try {
             Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
-            TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama());
+            TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir());
             if (!Objects.equals(tiket.getUser().getId(), user.getId())) throw new BadCredentialsException("Anda buka pemegang tiket");
             return tiketItemListResponse;
         } catch (Exception exc ){
@@ -62,7 +63,7 @@ public class TiketService {
             tiket.setStatusTiket(true);
             Tiket savedTiket = tiketRepository.save(tiket);
             if (savedTiket.getStatusTiket()) {
-                TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama());
+                TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir());
                 TiketVerifikasiResponse verifiedResponse = new TiketVerifikasiResponse();
                 verifiedResponse.setStatusVerifikasi(savedTiket.getStatusTiket());
                 verifiedResponse.setTiketItemListResponse(tiketItemListResponse);

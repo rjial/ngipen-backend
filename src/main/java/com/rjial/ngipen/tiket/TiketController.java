@@ -5,6 +5,7 @@ import com.rjial.ngipen.common.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,8 +23,8 @@ public class TiketController {
     @GetMapping("")
     public ResponseEntity<Response<TiketPageListResponse>> getAllTiket(@AuthenticationPrincipal User user, @RequestParam("page") int page, @RequestParam("size") int size) {
         Response<TiketPageListResponse> pageResponse = new Response<>();
-        PageRequest pageRequest = PageRequest.of(page, size);
-        pageResponse.setData(tiketService.getAllTiket(user,pageRequest));
+        Pageable pageable = PageRequest.of(page, size);
+        pageResponse.setData(tiketService.getAllTiket(user, pageable));
         pageResponse.setMessage("Tikets has been returned");
         pageResponse.setStatusCode((long) HttpStatus.OK.value());
         return ResponseEntity.ok(pageResponse);

@@ -49,7 +49,7 @@ public class Tiket {
     @JsonIgnore
     private PaymentTransaction paymentTransaction;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "id_paymenthistory", referencedColumnName = "id_paymenthistory")
     @JsonIgnore
     private PaymentHistory paymentHistory;

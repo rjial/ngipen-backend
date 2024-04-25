@@ -102,6 +102,7 @@ public class PaymentService {
 //                tiket.setUuid(UUID.randomUUID());
 //                tiket.setPaymentTransaction(savedPayment);
 //                tiket.setStatusTiket(false);
+                saveTiket(paymentHistory, paymentTransaction, checkout.getTotal());
                 PaymentHistory savedPaymentHistory = paymentHistoryRepository.save(paymentHistory);
                 if(savedPaymentHistory.getId() > 0) {
 //                    Tiket savedTiket = tiketRepository.save(tiket);
@@ -115,6 +116,8 @@ public class PaymentService {
             response.setMessage("Payment successfully");
             response.setStatusCode((long) HttpStatus.OK.value());
         } catch (Exception exc) {
+            exc.printStackTrace();
+            log.error(exc.getMessage());
             throw new DataIntegrityViolationException("Payment cant be processed! : " + exc.getMessage(), exc);
         }
         return response;
@@ -157,16 +160,16 @@ public class PaymentService {
 
                 if (request.getTransactionStatus().equals("capture")) {
                     if (request.getFraudStatus().equals("accept")) {
-                        paymentTransactionByUuid.getPaymentHistories().forEach(paymentHistory -> {
-                            saveTiket(paymentHistory, paymentTransactionByUuid, paymentHistory.getTotal());
-                        });
+//                        paymentTransactionByUuid.getPaymentHistories().forEach(paymentHistory -> {
+//                            saveTiket(paymentHistory, paymentTransactionByUuid, paymentHistory.getTotal());
+//                        });
                         paymentTransactionByUuid.setStatus(PaymentStatus.ACCEPTED);
                     }
                 } else if (request.getTransactionStatus().equals("settlement")) {
                     if (!paymentTransactionByUuid.getPaymentHistories().isEmpty()) {
-                        for (PaymentHistory paymentHistory : paymentTransactionByUuid.getPaymentHistories()) {
-                            saveTiket(paymentHistory, paymentTransactionByUuid, paymentHistory.getTotal());
-                        }
+//                        for (PaymentHistory paymentHistory : paymentTransactionByUuid.getPaymentHistories()) {
+//                            saveTiket(paymentHistory, paymentTransactionByUuid, paymentHistory.getTotal());
+//                        }
                     }
                     paymentTransactionByUuid.setStatus(PaymentStatus.ACCEPTED);
                 } else if (request.getTransactionStatus().equals("cancel") || request.getTransactionStatus().equals("deny") || request.getTransactionStatus().equals("expire")) {
