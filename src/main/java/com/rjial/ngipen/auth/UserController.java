@@ -33,12 +33,25 @@ public class UserController {
         try {
             Page<User> users = userService.findAll(PageRequest.of(page, size), user);
             response.setData(users);
-            response.setMessage("Success");
+            response.setMessage("Success Load Users");
             response.setStatusCode((long) HttpStatus.OK.value());
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to load users : " + e.getMessage(),e);
+        }
+    }
+    @GetMapping("/{uuid}")
+    public ResponseEntity<Response<User>> findUserByUUID(@PathVariable("uuid") String uuid, @AuthenticationPrincipal User user) {
+        Response<User> response = new Response<>();
+        try {
+            User userByUUID = userService.findUserByUUID(uuid, user);
+            response.setData(userByUUID);
+            response.setMessage("Success Load User " + userByUUID.getName());
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load user : " + e.getMessage(),e);
         }
     }
 

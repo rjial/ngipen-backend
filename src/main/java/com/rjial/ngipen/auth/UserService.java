@@ -12,6 +12,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @Slf4j
 public class UserService {
@@ -76,12 +78,21 @@ public class UserService {
     }
 
     public Page<User> findAll(Pageable pageable, User user) throws Exception {
-//        if (!(user.getLevel().equals(Level.ADMIN))) throw new BadCredentialsException("Anda bukan admin");
+        if (!(user.getLevel().equals(Level.ADMIN))) throw new BadCredentialsException("Anda bukan admin");
         try {
             Page<User> findAllUser = userRepository.findAll(pageable);
             return new PageImpl<>(findAllUser.getContent(), pageable, findAllUser.getTotalElements());
         } catch (Exception exception) {
             throw new Exception("Failed to load users : " + exception.getMessage(), exception);
+        }
+    }
+
+    public User findUserByUUID(String uuid, User user) throws Exception {
+        if (!(user.getLevel().equals(Level.ADMIN))) throw new BadCredentialsException("Anda bukan admin");
+        try {
+            return userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
+        } catch (Exception exc) {
+            throw new Exception("Failed to load user : " + exc.getMessage(), exc);
         }
     }
 }
