@@ -4,9 +4,7 @@ import com.rjial.ngipen.common.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -93,6 +91,26 @@ public class UserService {
             return userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
         } catch (Exception exc) {
             throw new Exception("Failed to load user : " + exc.getMessage(), exc);
+        }
+    }
+    public Page<User> searchUser(String query, int page, int size, User user) throws Exception {
+        if (!(user.getLevel().equals(Level.ADMIN))) throw new BadCredentialsException("Anda bukan admin");
+        try {
+            ExampleMatcher exampleMatcher = ExampleMatcher
+                    .matchingAny()
+                    .withMatcher("name", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                    .withMatcher("email", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                    .withMatcher("uuid", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                    .withIgnorePaths( "password_user", "id_user");
+            Pageable pageable = PageRequest.of(page, size);
+            User userSearch = User.builder()
+                    .name(query)
+                    .email(query)
+                    .build();
+            Example<User> exampleUser = Example.of(userSearch, exampleMatcher);
+            return userRepository.findAll(exampleUser, pageable);
+        } catch (Exception exc) {
+            throw new Exception("Failed to search user : " + exc.getMessage(), exc);
         }
     }
 }

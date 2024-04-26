@@ -55,6 +55,20 @@ public class UserController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<Response<Page<User>>> searchUser(@RequestParam("query") String query, @RequestParam int page,@RequestParam int size, @AuthenticationPrincipal User user) {
+        Response<Page<User>> response = new Response<>();
+        try {
+            Page<User> users = userService.searchUser(query, page, size, user);
+            response.setData(users);
+            response.setMessage("Success searching user ");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load user : " + e.getMessage(),e);
+        }
+    }
+
     @GetMapping(value = "/detail")
     public ResponseEntity<Response<UserDetailResponse>> userDetail() {
         String name = SecurityContextHolder.getContext().getAuthentication().getName();

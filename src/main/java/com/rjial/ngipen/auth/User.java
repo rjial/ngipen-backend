@@ -19,7 +19,8 @@ import java.util.UUID;
 @Setter
 @Entity
 @RequiredArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "user")
 public class User implements UserDetails {
     @Id
@@ -27,28 +28,21 @@ public class User implements UserDetails {
     @Column(name = "id_user")
     @JsonIgnore
     private Long id;
-    @NonNull
-    @Column(name = "email_user")
+    @Column(name = "email_user", nullable = false, unique = true)
     private String email;
-    @NonNull
-    @Column(name = "nama_user")
+    @Column(name = "nama_user", nullable = false)
     private String name;
-    @NonNull
-    @Column(name = "password_user")
+    @Column(name = "password_user", nullable = false)
     @JsonIgnore
     private String password;
-    @NonNull
     @Column(name = "nohp_user")
     private String hp;
-    @NonNull
     @Column(name = "alamat")
     private String address;
-    @NonNull
     @Enumerated(EnumType.STRING)
     private Level level;
-    @NonNull
-    @Column(name = "uuid")
-    private UUID uuid = UUID.randomUUID();
+    @Column(name = "uuid", nullable = false, unique = true)
+    private UUID uuid;
 
     @OneToMany(mappedBy = "pemegangEvent")
     @JsonBackReference
