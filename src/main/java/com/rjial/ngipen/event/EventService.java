@@ -6,6 +6,9 @@ import com.rjial.ngipen.common.Response;
 import com.rjial.ngipen.tiket.JenisTiket;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -22,12 +25,12 @@ public class EventService {
     @Autowired
     private EventRepository eventRepository;
 
-    public Response<ListEventResponse> getAllEvents() throws Exception {
-        Response<ListEventResponse> response = new Response<>();
+    public Response<Page<Event>> getAllEvents(int page, int size) throws Exception {
+        Response<Page<Event>> response = new Response<>();
         try {
-            List<Event> eventList = eventRepository.findAll();
-            ListEventResponse listEventResponse = new ListEventResponse(eventList);
-            response.setData(listEventResponse);
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Event> eventList = eventRepository.findAll(pageable);
+            response.setData(eventList);
             response.setStatusCode((long) HttpStatus.OK.value());
             response.setMessage("Returning list of events successfully!");
         } catch (Exception exc) {

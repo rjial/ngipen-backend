@@ -89,6 +89,7 @@ public class Event {
     @JoinColumn(name = "id_user", referencedColumnName = "id_user")
     @JsonManagedReference
     @JsonSerialize(using = UserSerializer.class)
+    @Schema(type = "string", example = "Lorem Ipsum")
     private User pemegangEvent;
 
 }

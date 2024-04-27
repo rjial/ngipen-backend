@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,8 +26,8 @@ public class EventController {
     private EventService eventService;
 
     @GetMapping("")
-    public ResponseEntity<Response<ListEventResponse>> getAllEvents() throws Exception {
-        return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
+    public ResponseEntity<Response<Page<Event>>> getAllEvents(@RequestParam("page") int page, @RequestParam int size) throws Exception {
+        return ResponseEntity.ok(eventService.getAllEvents(page, size));
     }
 
     @GetMapping("/{uuid}")
