@@ -4,6 +4,8 @@ import com.rjial.ngipen.auth.Level;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import com.rjial.ngipen.tiket.JenisTiket;
+import com.rjial.ngipen.tiket.JenisTiketRepository;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -24,6 +26,9 @@ public class EventService {
 
     @Autowired
     private EventRepository eventRepository;
+
+    @Autowired
+    private JenisTiketRepository jenisTiketRepository;
 
     public Response<Page<Event>> getAllEvents(int page, int size) throws Exception {
         Response<Page<Event>> response = new Response<>();
@@ -67,6 +72,16 @@ public class EventService {
             throw new Exception("Returning list of jenis tiket failed! : " + exc.getMessage(), exc);
         }
         return response;
+    }
+
+    public JenisTiket getJenisTiketDetail(String uuid, Long id) throws Exception {
+        Event eventByUuid = eventRepository.findEventByUuid(UUID.fromString(uuid));
+        JenisTiket jenisTiket = jenisTiketRepository.findById(id).orElseThrow();
+        if (jenisTiket.getEvent().getId().equals(eventByUuid.getId())) {
+            return jenisTiket;
+        } else {
+            throw new BadRequestException("Jenis tiket ini bukan dari event ini");
+        }
     }
 
     public Response<EventItemResponse> insertEvent(AddEventRequest request, User user) throws Exception {
@@ -115,6 +130,64 @@ public class EventService {
             return eventItemResponse;
         } catch (Exception exc) {
             throw new Exception("Gagal menverifikasi event", exc);
+        }
+    }
+
+    public JenisTiket insertJenisTiket(String uuid, User user, AddJenisTiketRequest addJenisTiketRequest) throws Exception {
+        if (user.getLevel() == Level.PEMEGANG_ACARA || user.getLevel() == Level.ADMIN) {
+            Event eventUUID = eventRepository.findEventByUuid(UUID.fromString(uuid));
+            if (eventUUID.getPemegangEvent().getId().equals(user.getId())) {
+                JenisTiket jenisTiket = new JenisTiket();
+                jenisTiket.setEvent(eventUUID);
+                jenisTiket.setNama(addJenisTiketRequest.getName());
+                jenisTiket.setHarga(addJenisTiketRequest.getHarga());
+                JenisTiket savedJenisTiket = jenisTiketRepository.save(jenisTiket);
+                if (savedJenisTiket.getId() > 0) {
+                    return savedJenisTiket;
+                } else {
+                    throw new DataIntegrityViolationException("Tambah jenis tiket gagal!");
+                }
+            } else {
+                throw new BadRequestException("Anda bukan pemegang acara ini!");
+            }
+        } else {
+            throw new Exception("Anda bukan pemegang acara!");
+        }
+    }
+
+    public void deleteJenisTiket(String uuid, Long id, User user) throws Exception {
+        if (user.getLevel() == Level.PEMEGANG_ACARA || user.getLevel() == Level.ADMIN) {
+            Event event = eventRepository.findEventByUuid(UUID.fromString(uuid));
+            if (event.getPemegangEvent().getId().equals(user.getId())) {
+                JenisTiket jenisTiket = jenisTiketRepository.findById(id).orElseThrow();
+                jenisTiketRepository.delete(jenisTiket);
+            } else {
+                throw new BadRequestException("Anda bukan pemegang acara ini!");
+            }
+        } else {
+            throw new BadRequestException("Anda bukan pemegang acara atau admin!");
+        }
+    }
+
+    public JenisTiket updateJenisTiket(String uuid, User user, Long id, UpdateJenisTiketRequest updateJenisTiketRequest) throws Exception {
+        if (user.getLevel() == Level.PEMEGANG_ACARA || user.getLevel() == Level.ADMIN) {
+            Event eventUUID = eventRepository.findEventByUuid(UUID.fromString(uuid));
+            if (eventUUID.getPemegangEvent().getId().equals(user.getId())) {
+                JenisTiket jenisTiket = jenisTiketRepository.findById(id).orElseThrow();
+                jenisTiket.setEvent(eventUUID);
+                jenisTiket.setNama(updateJenisTiketRequest.getName());
+                jenisTiket.setHarga(updateJenisTiketRequest.getHarga());
+                JenisTiket savedJenisTiket = jenisTiketRepository.save(jenisTiket);
+                if (savedJenisTiket.getId() > 0) {
+                    return savedJenisTiket;
+                } else {
+                    throw new DataIntegrityViolationException("Update jenis tiket gagal!");
+                }
+            } else {
+                throw new BadRequestException("Anda bukan pemegang acara ini!");
+            }
+        } else {
+            throw new Exception("Anda bukan pemegang acara!");
         }
     }
 }

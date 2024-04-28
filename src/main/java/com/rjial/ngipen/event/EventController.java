@@ -3,6 +3,7 @@ package com.rjial.ngipen.event;
 import com.rjial.ngipen.auth.Level;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
+import com.rjial.ngipen.tiket.JenisTiket;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.coyote.BadRequestException;
@@ -38,6 +39,61 @@ public class EventController {
     @GetMapping("/{uuid}/jenistiket")
     public ResponseEntity<Response<EventJenisTiketResponse>> getEventJenisTiketByUUID(@PathVariable UUID uuid) throws Exception {
         return new ResponseEntity<>(eventService.getJenisTiketByUUID(uuid), HttpStatus.OK);
+    }
+
+    @GetMapping("/{uuid}/jenistiket/{id}")
+    public ResponseEntity<Response<JenisTiket>> getEventJenisTiketDetail(@PathVariable UUID uuid, @PathVariable Long id) throws Exception {
+        Response<JenisTiket> response = new Response<>();
+        try {
+            JenisTiket jenisTiketDetail = eventService.getJenisTiketDetail(uuid.toString(), id);
+            response.setData(jenisTiketDetail);
+            response.setMessage("Successfully retrieved Jenis Tiket");
+            response.setStatusCode((long) HttpStatus.OK.value());
+        } catch (Exception e) {
+            throw new BadRequestException("Failed retrieved Jenis Tiket " + e.getMessage(), e);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{uuid}/jenistiket")
+    public ResponseEntity<Response<JenisTiket>> insertJenisTiket(@PathVariable("uuid") String uuid, @AuthenticationPrincipal User user, @RequestBody AddJenisTiketRequest addJenisTiketRequest) throws Exception {
+        Response<JenisTiket> response = new Response<>();
+        try {
+            JenisTiket jenisTiket = eventService.insertJenisTiket(uuid, user, addJenisTiketRequest);
+            response.setData(jenisTiket);
+            response.setMessage("Successfully inserted Jenis Tiket");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            throw new BadRequestException("Gagal menambahkan jenis tiket : " + e.getMessage(), e);
+        }
+    }
+
+    @DeleteMapping("/{uuid}/jenistiket/{id}")
+    public ResponseEntity<Response<String>> deleteJenisTiket(@PathVariable("uuid") String uuid, @PathVariable("id") Long id, @AuthenticationPrincipal User user) throws BadRequestException {
+        Response<String> response = new Response<>();
+        try {
+            eventService.deleteJenisTiket(uuid, id, user);
+            response.setData("Successfully deleted Jenis Tiket");
+            response.setMessage("Successfully deleted Jenis Tiket");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            throw new BadRequestException("Gagal menghapus jenis tiket : " + e.getMessage(), e);
+        }
+    }
+
+    @PutMapping("/{uuid}/jenistiket/{id}")
+    public ResponseEntity<Response<JenisTiket>> updateJenisTiket(@PathVariable("uuid") String uuid, @PathVariable("id") Long id, @AuthenticationPrincipal User user, @RequestBody UpdateJenisTiketRequest updateJenisTiketRequest) throws BadRequestException {
+        Response<JenisTiket> response = new Response<>();
+        try {
+            response.setData(eventService.updateJenisTiket(uuid, user, id, updateJenisTiketRequest));
+            response.setMessage("Successfully updated Jenis Tiket");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            throw new BadRequestException("Gagal mengupdate jenis tiket : " + e.getMessage(), e);
+        }
     }
 
     @PostMapping("")
