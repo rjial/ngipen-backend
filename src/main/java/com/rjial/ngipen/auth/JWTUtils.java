@@ -4,6 +4,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.Claims;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -23,10 +25,11 @@ public class JWTUtils {
 
     private static final long EXPIRATION_TIME = 86400000;
 
-    public JWTUtils() {
-        String secretString = "secret";
+    public JWTUtils(Environment env) {
+        String secretString = env.getProperty("jwt.key");
+        assert secretString != null;
         byte[] keyBytes = secretString.getBytes(StandardCharsets.UTF_8);
-        this.secretKey = Jwts.SIG.HS256.key().build();
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(UserDetails userdetails) {
@@ -41,8 +44,9 @@ public class JWTUtils {
     }
 
     public String generateRefreshToken(HashMap<String, Object> claims, UserDetails userdetails) {
+        User user = (User) userdetails;
         return Jwts.builder()
-                .claims(claims)
+                .claim("data", new UserClaim(user.getEmail(), user.getName(), user.getAddress(), user.getLevel().toString()))
                 .subject(userdetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
