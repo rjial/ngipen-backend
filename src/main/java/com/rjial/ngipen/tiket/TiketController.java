@@ -51,10 +51,10 @@ public class TiketController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<Response<Tiket>> verifyTiket(@AuthenticationPrincipal User user, @RequestBody TiketVerificationRequest payload) throws BadRequestException, JsonProcessingException {
-        Response<Tiket> tiketResponse = new Response<>();
+    public ResponseEntity<Response<TiketItemListResponse>> verifyTiket(@AuthenticationPrincipal User user, @RequestBody TiketVerificationRequest payload) throws BadRequestException, JsonProcessingException {
+        Response<TiketItemListResponse> tiketResponse = new Response<>();
         try {
-            Tiket verifiedTiket = tiketService.verifyTiket(payload, user);
+            TiketItemListResponse verifiedTiket = tiketService.verifyTiket(payload, user);
             tiketResponse.setData(verifiedTiket);
             tiketResponse.setMessage("Tiket berhasil diverifikasi");
             tiketResponse.setStatusCode((long) HttpStatus.OK.value());

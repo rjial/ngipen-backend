@@ -51,4 +51,6 @@ public class TiketItemListResponse {
     @JsonProperty("waktu_akhir")
     @Schema(type = "string")
     private LocalTime waktuAkhir;
+    private String lokasi;
+    private Boolean statusVerifikasi;
 }

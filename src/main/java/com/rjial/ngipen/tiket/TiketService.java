@@ -3,6 +3,7 @@ package com.rjial.ngipen.tiket;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -41,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.List;
 
@@ -57,7 +59,14 @@ public class TiketService {
     @Autowired
     private TiketVerificationRepository tiketVerificationRepository;
 
+    private Algorithm algorithm;
+    private JWTVerifier jwtVerifier;
+
     public TiketService(Environment env) {
+        String tiketKey = env.getProperty("tiket.key");
+        assert tiketKey != null;
+        algorithm = Algorithm.HMAC256(tiketKey);
+        jwtVerifier = JWT.require(algorithm).withIssuer("Ngipen").build();
     }
 //    public Page<Tiket> getAllTiket(int page, int size, User user) {
 //        PageRequest pageRequest = PageRequest.of(page, size);
@@ -67,7 +76,7 @@ public class TiketService {
 //        PageRequest pageRequest = PageRequest.of(page, size);
         List<Tiket> allByUser = tiketRepository.findAllByUser(user);
         List<TiketItemListResponse> collect = allByUser.stream().map(item -> {
-            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir());
+            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket());
         }).toList();
         return new TiketListResponse(collect);
     }
@@ -75,7 +84,7 @@ public class TiketService {
     public TiketPageListResponse getAllTiket(User user, Pageable pageable) {
         Page<Tiket> allByUser = tiketRepository.findAllByUser(user, pageable);
         Page<TiketItemListResponse> map = allByUser.map(item -> {
-            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir());
+            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket());
         });
         return new TiketPageListResponse(map);
     }
@@ -85,10 +94,19 @@ public class TiketService {
         try {
             Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuidTiket)).orElseThrow();
             if (tiket.getUser().getId().equals(user.getId())) {
+                LocalDateTime expiredDateTime = LocalDateTime.of(tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir());
+                String jwtToken = JWT.create()
+                        .withIssuer("Ngipen")
+                        .withSubject("Ngipen Tiket")
+                        .withClaim("tiketVerification", tiket.getTiketVerification().getUuid().toString())
+                        .withIssuedAt(new Date())
+//                        .withExpiresAt(Date.from(expiredDateTime.atZone(ZoneId.of("Asia/Jakarta")).toInstant()))
+                        .withJWTId(UUID.randomUUID().toString())
+                        .sign(algorithm);
                 Map<EncodeHintType, Object> hints = new EnumMap<EncodeHintType, Object>(EncodeHintType.class);
                 hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
                 hints.put(EncodeHintType.MARGIN, 0);
-                BitMatrix bitMatrix = new MultiFormatWriter().encode(tiket.getTiketVerification().getUuid().toString(), BarcodeFormat.QR_CODE, imageSize, imageSize, hints);
+                BitMatrix bitMatrix = new MultiFormatWriter().encode(jwtToken, BarcodeFormat.QR_CODE, imageSize, imageSize, hints);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 MatrixToImageWriter.writeToStream(bitMatrix, "jpeg", bos);
                 return bos.toByteArray();
@@ -139,8 +157,10 @@ public class TiketService {
         }
     }
 
-    public Tiket verifyTiket(TiketVerificationRequest payload, User user) throws BadRequestException, JsonProcessingException {
-        TiketVerification tiketVerification = tiketVerificationRepository.findByUuid(UUID.fromString(payload.getPayload())).orElseThrow();
+    public TiketItemListResponse verifyTiket(TiketVerificationRequest payload, User user) throws BadRequestException, JsonProcessingException, JWTVerificationException {
+        DecodedJWT decodedJWT = jwtVerifier.verify(payload.getPayload());
+        String tiketVerification1 = decodedJWT.getClaim("tiketVerification").asString();
+        TiketVerification tiketVerification = tiketVerificationRepository.findByUuid(UUID.fromString(tiketVerification1)).orElseThrow();
         log.info(tiketVerification.toString());
         Event eventByUuid = eventRepository.findEventByUuid(tiketVerification.getTiketToVerification().getJenisTiket().getEvent().getUuid());
             if (eventByUuid != null) {
@@ -149,7 +169,8 @@ public class TiketService {
                 if (expiredDateTime.isBefore(LocalDateTime.now())) throw new  BadRequestException("Tiket sudah kadaluarsa");
                 if (tiket.getStatusTiket()) throw new BadRequestException("Anda tidak bisa menverifikasi tiket yang sudah terverifikasi");
                 tiket.setStatusTiket(true);
-                return tiketRepository.save(tiket);
+                Tiket item = tiketRepository.save(tiket);
+                return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket());
             } else {
                 throw new BadRequestException("Event tidak ditemukan");
             }
@@ -160,31 +181,11 @@ public class TiketService {
     public TiketItemListResponse getTiketFromUUID(String uuid, User user) {
         try {
             Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
-            TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir());
+            TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir(), tiket.getJenisTiket().getEvent().getLokasi(), tiket.getStatusTiket()   );
             if (!Objects.equals(tiket.getUser().getId(), user.getId())) throw new BadCredentialsException("Anda buka pemegang tiket");
             return tiketItemListResponse;
         } catch (Exception exc ){
             throw new DataIntegrityViolationException("Tiket is not found", exc);
         }
     }
-
-//    public TiketVerifikasiResponse verifyTiket(String uuid, User user) {
-//        try {
-//            Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
-//            if (tiket.getJenisTiket().getEvent().getPemegangEvent().getId().equals(user.getId())) throw new BadCredentialsException("Anda bukan pemilik event dari tiket ini!");
-//            tiket.setStatusTiket(true);
-//            Tiket savedTiket = tiketRepository.save(tiket);
-//            if (savedTiket.getStatusTiket()) {
-//                TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir());
-//                TiketVerifikasiResponse verifiedResponse = new TiketVerifikasiResponse();
-//                verifiedResponse.setStatusVerifikasi(savedTiket.getStatusTiket());
-//                verifiedResponse.setTiketItemListResponse(tiketItemListResponse);
-//                return verifiedResponse;
-//            } else {
-//                throw new DataIntegrityViolationException("Gagal menverifikasi tiket");
-//            }
-//        } catch(Exception exc) {
-//            throw new DataIntegrityViolationException("Gagal menverifikasi tiket", exc);
-//        }
-//    }
 }
