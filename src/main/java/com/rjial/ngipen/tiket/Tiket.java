@@ -53,4 +53,8 @@ public class Tiket {
     @JoinColumn(name = "id_paymenthistory", referencedColumnName = "id_paymenthistory")
     @JsonIgnore
     private PaymentHistory paymentHistory;
+
+    @OneToOne(mappedBy = "tiketToVerification")
+    @JsonIgnore
+    private TiketVerification tiketVerification;
 }

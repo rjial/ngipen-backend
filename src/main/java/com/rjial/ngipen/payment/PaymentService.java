@@ -6,9 +6,12 @@ import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import com.rjial.ngipen.tiket.Tiket;
 import com.rjial.ngipen.tiket.TiketRepository;
+import com.rjial.ngipen.tiket.TiketVerification;
+import com.rjial.ngipen.tiket.TiketVerificationRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -23,11 +26,11 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public class PaymentService {
 
-    @Value("midtrans.clientkey")
     private String clientKey;
 
-    @Value("midtrans.serverkey")
     private String serverKey;
+
+    private String midtransNotificationUrl;
 
     private Boolean isProduction = false;
 
@@ -43,15 +46,28 @@ public class PaymentService {
     @Autowired
     private TiketRepository tiketRepository;
 
+    @Autowired
+    private TiketVerificationRepository tiketVerificationRepository;
+
+    public PaymentService(Environment env) {
+        clientKey = env.getProperty("midtrans.clientkey");
+        log.info(clientKey);
+        assert clientKey != null;
+        serverKey = env.getProperty("midtrans.serverkey");
+        log.info(serverKey);
+        assert serverKey != null;
+        this.midtransNotificationUrl = env.getProperty("midtrans.notification-url");
+    }
+
     public Response<PaymentOrderResponse> payment(PaymentOrderRequest request, User user) {
         List<Checkout> checkouts = new ArrayList<>();
         Response<PaymentOrderResponse> response = new Response<>();
         Config snapConfig = Config.builder()
-                .setServerKey("SB-Mid-server-Fq6NnVTKcsXINGi9bqX1y-Na")
-                .setClientKey("SB-Mid-client-vCLfQi6IOtcCIumG")
+                .setServerKey(serverKey)
+                .setClientKey(clientKey)
                 .setIsProduction(false)
                 .enableLog(true)
-                .setPaymentOverrideNotification("https://webhook.site/c30893b3-aa44-4590-9342-ee7dfa7d2118")
+                .setPaymentOverrideNotification(midtransNotificationUrl)
                 .build();
         try {
             AtomicLong total = new AtomicLong(0);
@@ -203,6 +219,10 @@ public class PaymentService {
             tiket.setUuid(UUID.randomUUID());
             tiket.setPaymentTransaction(paymentTransactionByUuid);
             tiket.setStatusTiket(false);
+            TiketVerification tiketVerification = new TiketVerification();
+            tiketVerification.setUuid(UUID.randomUUID());
+            tiketVerification.setTiketToVerification(tiket);
+            tiket.setTiketVerification(tiketVerificationRepository.save(tiketVerification));
             Tiket savedTiket = tiketRepository.save(tiket);
             if (savedTiket.getId() > 0) {
                 savedTikets.add(savedTiket);
