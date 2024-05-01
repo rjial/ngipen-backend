@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,25 @@ public class EventController {
     @GetMapping("")
     public ResponseEntity<Response<Page<Event>>> getAllEvents(@RequestParam("page") int page, @RequestParam int size) throws Exception {
         return ResponseEntity.ok(eventService.getAllEvents(page, size));
+    }
+
+    @GetMapping("/myevents")
+    public ResponseEntity<Response<Page<Event>>> getPemegangAcaraEvent(@RequestParam("page") int page, @RequestParam int size, @AuthenticationPrincipal  User user) {
+        Response<Page<Event>> response = new Response<>();
+        try {
+            response.setData(eventService.getPemegangAcaraEvent(page, size, user));
+            response.setMessage("Successfully returning events");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (AuthorizationServiceException e) {
+            response.setMessage(e.getMessage());
+            response.setStatusCode((long) HttpStatus.UNAUTHORIZED.value());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     @GetMapping("/{uuid}")

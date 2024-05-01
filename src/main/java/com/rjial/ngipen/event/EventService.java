@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +43,23 @@ public class EventService {
             throw new Exception("Returning list of events failed! : " + exc.getMessage(), exc);
         }
         return response;
+    }
+
+    public Page<Event> getPemegangAcaraEvent(int page, int size, User user) throws BadRequestException {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Event> allByPemegangEvent;
+            if(user.getLevel().equals(Level.PEMEGANG_ACARA)) {
+                allByPemegangEvent = eventRepository.findAllByPemegangEvent(user.getUuid(), pageable);
+            } else if(user.getLevel().equals(Level.ADMIN)) {
+                allByPemegangEvent  = eventRepository.findAll(pageable);
+            } else {
+                throw new AuthorizationServiceException("Anda bukan pemegang event atau admin");
+            }
+            return allByPemegangEvent;
+        } catch (Exception exc) {
+            throw exc;
+        }
     }
 
     public Response<EventItemResponse> getEventByUUID(UUID uuid) throws Exception {
