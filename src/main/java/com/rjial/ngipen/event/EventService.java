@@ -5,7 +5,11 @@ import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import com.rjial.ngipen.tiket.JenisTiket;
 import com.rjial.ngipen.tiket.JenisTiketRepository;
+import com.rjial.ngipen.tiket.Tiket;
+import com.rjial.ngipen.tiket.TiketRepository;
 import org.apache.coyote.BadRequestException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -25,11 +29,14 @@ import java.util.UUID;
 @Service
 public class EventService {
 
+    private static final Logger log = LoggerFactory.getLogger(EventService.class);
     @Autowired
     private EventRepository eventRepository;
 
     @Autowired
     private JenisTiketRepository jenisTiketRepository;
+    @Autowired
+    private TiketRepository tiketRepository;
 
     public Response<Page<Event>> getAllEvents(int page, int size) throws Exception {
         Response<Page<Event>> response = new Response<>();
@@ -206,6 +213,26 @@ public class EventService {
             }
         } else {
             throw new Exception("Anda bukan pemegang acara!");
+        }
+    }
+
+    public Page<Tiket> getTiketFromPemegangAcara(UUID uuid, int page, int size,  User user) throws AuthorizationServiceException {
+        if (user.getLevel() == Level.PEMEGANG_ACARA) {
+            Pageable pageable = PageRequest.of(page, size);
+            Event event = eventRepository.findEventByUuid(uuid);
+            if (event.getPemegangEvent().getId().equals(user.getId())) {
+                log.info(event.getName());
+                return tiketRepository.findTiketByPemegangAcara(event, pageable);
+            } else {
+                throw new AuthorizationServiceException("Anda bukan pemegang acara ini!");
+            }
+        } else if (user.getLevel() == Level.ADMIN) {
+            Pageable pageable = PageRequest.of(page, size);
+            Event event = eventRepository.findEventByUuid(uuid);
+            log.info(event.getName());
+            return tiketRepository.findTiketByAdmin(event, pageable);
+        } else {
+            throw new AuthorizationServiceException("Anda bukan pemegang acara ini!");
         }
     }
 }

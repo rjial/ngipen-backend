@@ -10,6 +10,7 @@ import com.rjial.ngipen.auth.UserSerializer;
 import com.rjial.ngipen.payment.PaymentHistory;
 import com.rjial.ngipen.payment.PaymentTransaction;
 import io.micrometer.common.lang.NonNull;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
@@ -38,6 +39,7 @@ public class Tiket {
     @ManyToOne
     @JoinColumn(name = "id_user", referencedColumnName = "id_user")
     @JsonSerialize(using = UserSerializer.class)
+    @Schema(type = "string", example = "Lorem Ipsum")
     private User user;
 
     @ManyToOne

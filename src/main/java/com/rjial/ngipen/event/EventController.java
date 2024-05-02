@@ -4,6 +4,7 @@ import com.rjial.ngipen.auth.Level;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import com.rjial.ngipen.tiket.JenisTiket;
+import com.rjial.ngipen.tiket.Tiket;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.coyote.BadRequestException;
@@ -59,6 +60,21 @@ public class EventController {
     @GetMapping("/{uuid}/jenistiket")
     public ResponseEntity<Response<EventJenisTiketResponse>> getEventJenisTiketByUUID(@PathVariable UUID uuid) throws Exception {
         return new ResponseEntity<>(eventService.getJenisTiketByUUID(uuid), HttpStatus.OK);
+    }
+
+    @GetMapping("/{uuid}/tiket")
+    public ResponseEntity<Response<Page<Tiket>>> getTiketsByPemegangAcara(@PathVariable("uuid") String  uuid, @RequestParam("page") int page, @RequestParam int size, @AuthenticationPrincipal User user) throws Exception {
+        Response<Page<Tiket>> response = new Response<>();
+        try {
+            response.setData(eventService.getTiketFromPemegangAcara(UUID.fromString(uuid), page, size, user));
+            response.setMessage("Successfully returning tikets");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (AuthorizationServiceException e) {
+            response.setMessage("Returning tikets failed : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.UNAUTHORIZED.value());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
     }
 
     @GetMapping("/{uuid}/jenistiket/{id}")
