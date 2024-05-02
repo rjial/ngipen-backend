@@ -17,6 +17,7 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
+import com.rjial.ngipen.auth.Level;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import com.rjial.ngipen.event.Event;
@@ -176,16 +177,48 @@ public class TiketService {
             }
     }
 
-
-
     public TiketItemListResponse getTiketFromUUID(String uuid, User user) {
         try {
             Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
             TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir(), tiket.getJenisTiket().getEvent().getLokasi(), tiket.getStatusTiket()   );
-            if (!Objects.equals(tiket.getUser().getId(), user.getId())) throw new BadCredentialsException("Anda buka pemegang tiket");
-            return tiketItemListResponse;
+            if (user.getLevel().equals(Level.PEMEGANG_ACARA)) {
+                if (tiket.getJenisTiket().getEvent().getPemegangEvent().getId().equals(user.getId())) {
+                    return tiketItemListResponse;
+                } else {
+                    throw new BadCredentialsException("Anda bukan pemegang event dari tiket ini!");
+                }
+            } else if (user.getLevel().equals(Level.ADMIN)) {
+                return tiketItemListResponse;
+            } else if (user.getLevel().equals(Level.USER)) {
+                if (Objects.equals(tiket.getUser().getId(), user.getId())) {
+                    return tiketItemListResponse;
+                } else {
+                    throw new BadCredentialsException("Anda buka pemegang tiket");
+                }
+            } else {
+                throw new RuntimeException("Failed returning tiket!");
+            }
         } catch (Exception exc ){
             throw new DataIntegrityViolationException("Tiket is not found", exc);
+        }
+    }
+
+    public Tiket verifyTiketByUUID(String uuid, int status, User user) throws BadRequestException {
+        Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
+        if (user.getLevel() == Level.PEMEGANG_ACARA) {
+            Event event = tiket.getJenisTiket().getEvent();
+            if (event.getPemegangEvent().getId().equals(user.getId())) {
+                log.info("status : " + status);
+                tiket.setStatusTiket(status == 1);
+                return tiketRepository.save(tiket);
+            } else {
+                throw new BadRequestException("Anda bukan pemilik event dari tiket ini!");
+            }
+        } else if (user.getLevel() == Level.ADMIN) {
+            tiket.setStatusTiket(status == 1);
+            return tiketRepository.save(tiket);
+        } else {
+            throw new BadRequestException("Anda bukan pemegang event dan admin!");
         }
     }
 }

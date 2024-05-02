@@ -69,4 +69,23 @@ public class TiketController {
             return new ResponseEntity<>(tiketResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/verify/{uuidTiket}")
+    public ResponseEntity<Response<Tiket>> verifyTiketByUUIDTiket(@AuthenticationPrincipal User user, @PathVariable("uuidTiket") String uuid, @RequestParam("status") int status) {
+        Response<Tiket> tiketResponse = new Response<>();
+        try {
+            tiketResponse.setData(tiketService.verifyTiketByUUID(uuid, status, user));
+            tiketResponse.setMessage("Tiket has been returned");
+            tiketResponse.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(tiketResponse);
+        } catch (BadRequestException e) {
+            tiketResponse.setMessage("Verifikasi Tiket Gagal : " + e.getMessage());
+            tiketResponse.setStatusCode((long) HttpStatus.BAD_REQUEST.value());
+            return new ResponseEntity<>(tiketResponse, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            tiketResponse.setMessage(e.getMessage());
+            tiketResponse.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return new ResponseEntity<>(tiketResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
