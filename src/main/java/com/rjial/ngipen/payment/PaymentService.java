@@ -2,20 +2,30 @@ package com.rjial.ngipen.payment;
 
 import com.midtrans.Config;
 import com.midtrans.httpclient.SnapApi;
+import com.rjial.ngipen.auth.Level;
 import com.rjial.ngipen.auth.User;
+import com.rjial.ngipen.common.NotFoundException;
 import com.rjial.ngipen.common.Response;
+import com.rjial.ngipen.event.Event;
+import com.rjial.ngipen.event.EventRepository;
 import com.rjial.ngipen.tiket.Tiket;
 import com.rjial.ngipen.tiket.TiketRepository;
 import com.rjial.ngipen.tiket.TiketVerification;
 import com.rjial.ngipen.tiket.TiketVerificationRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -48,6 +58,9 @@ public class PaymentService {
 
     @Autowired
     private TiketVerificationRepository tiketVerificationRepository;
+
+    @Autowired
+    private EventRepository eventRepository;
 
     public PaymentService(Environment env) {
         clientKey = env.getProperty("midtrans.clientkey");
@@ -229,5 +242,29 @@ public class PaymentService {
             }
         }
         return savedTikets;
+    }
+    public Page<PaymentTransaction> getPaymentTransactionsByEvent(String uuidEvent, int page, int size, User user) throws BadRequestException {
+        Pageable pageable = PageRequest.of(page, size);
+        if (user.getLevel().equals(Level.PEMEGANG_ACARA)) {
+            Event eventByUuid = eventRepository.findEventByUuid(UUID.fromString(uuidEvent));
+            if (eventByUuid != null) {
+                if (eventByUuid.getPemegangEvent().getId().equals(user.getId())) {
+                    return paymentTransactionRepository.findPaymentTransactionByEvent(eventByUuid.getId(), pageable);
+                } else {
+                    throw new BadRequestException("Anda bukan pemegang event ini");
+                }
+            } else {
+                throw new NotFoundException("Event tidak ditemukan");
+            }
+        } else if (user.getLevel().equals(Level.ADMIN)) {
+            Event eventByUuid = eventRepository.findEventByUuid(UUID.fromString(uuidEvent));
+            if (eventByUuid != null) {
+                return paymentTransactionRepository.findPaymentTransactionByEvent(eventByUuid.getId(), pageable);
+            } else {
+                throw new NotFoundException("Event tidak ditemukan");
+            }
+        } else {
+            throw new BadRequestException("Anda bukan pemegang event ini");
+        }
     }
 }

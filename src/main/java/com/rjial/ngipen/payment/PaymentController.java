@@ -1,8 +1,11 @@
 package com.rjial.ngipen.payment;
 
 import com.rjial.ngipen.auth.User;
+import com.rjial.ngipen.common.NotFoundException;
 import com.rjial.ngipen.common.Response;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,5 +41,28 @@ public class PaymentController {
     @PostMapping("/notification")
     public ResponseEntity<Response<PaymentGatewayNotificationResponse>> notification(@RequestBody PaymentGatewayNotificationRequest request) {
         return ResponseEntity.ok(paymentService.notification(request));
+    }
+
+    @GetMapping("/event/{uuidEvent}")
+    public ResponseEntity<Response<Page<PaymentTransaction>>> getPaymentTransactionByEvent(@AuthenticationPrincipal User user, @RequestParam int page, @RequestParam int size, @PathVariable("uuidEvent") String uuidEvent) {
+        Response<Page<PaymentTransaction>> response = new Response<>();
+        try {
+            response.setData(paymentService.getPaymentTransactionsByEvent(uuidEvent, page, size, user));
+            response.setMessage("Get payment transaction successfully");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (NotFoundException e) {
+            response.setMessage("Failed to get payment transactions : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (BadRequestException e) {
+            response.setMessage("Failed to get payment transactions : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            response.setMessage("Failed to get payment transactions : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }

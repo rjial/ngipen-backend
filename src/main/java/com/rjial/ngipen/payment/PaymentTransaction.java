@@ -57,9 +57,9 @@ public class PaymentTransaction {
     @JsonSerialize(using = PaymentStatusSerializer.class)
     private PaymentStatus status;
 
-    @OneToMany(mappedBy = "paymentTransaction")
-    @JsonIgnore
-    private List<PaymentHistory> paymentHistories;
+//    @OneToMany(mappedBy = "paymentTransaction")
+//    @JsonIgnore
+//    private List<PaymentHistory> paymentHistories;
 
     @ManyToOne
     @JoinColumn(name = "id_user", referencedColumnName = "id_user")
@@ -75,6 +75,6 @@ public class PaymentTransaction {
     private List<Tiket> tikets;
 
     @OneToMany(mappedBy = "paymentTransaction")
-    private List<PaymentHistory> paymentTransactions;
+    private List<PaymentHistory> paymentHistories;
 
 }
