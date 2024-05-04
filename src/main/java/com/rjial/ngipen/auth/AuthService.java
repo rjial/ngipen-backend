@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -55,6 +56,7 @@ public class AuthService {
             user.setAddress(request.getAddress());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setLevel(Level.USER);
+            user.setUuid(UUID.randomUUID());
             User userCreate = userRepository.save(user);
             if (userCreate.getId() > 0) {
                 RegisterResponse registerResponse = new RegisterResponse();

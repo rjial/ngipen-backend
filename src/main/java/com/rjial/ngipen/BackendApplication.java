@@ -34,23 +34,23 @@ public class BackendApplication {
 	@Bean
 	CommandLineRunner runner() {
 		return args -> {
-			Faker faker = new Faker();
-			Event event = new Event();
-			User adminUser = userRepository.findByEmail("admin@rjial.dev").orElseThrow();
-			DetectiveConan detectiveConan = faker.detectiveConan();
-			event.setName(detectiveConan.gadgets());
-			event.setUuid(UUID.randomUUID());
-			event.setTanggalAwal(LocalDate.now());
-			event.setWaktuAwal(LocalTime.now());
-			event.setWaktuAkhir(LocalTime.now().plusHours(8L));
-			event.setLokasi(detectiveConan.vehicles());
-			event.setPersen(faker.number().randomNumber());
-			event.setDesc(detectiveConan.characters());
-			event.setPemegangEvent(adminUser);
-			Event save = eventRepository.save(event);
-			if (save.getId() > 0) {
-				log.info("Adding event - {}", detectiveConan.gadgets());
-			}
+//			Faker faker = new Faker();
+//			Event event = new Event();
+//			User adminUser = userRepository.findByEmail("admin@rjial.dev").orElseThrow();
+//			DetectiveConan detectiveConan = faker.detectiveConan();
+//			event.setName(detectiveConan.gadgets());
+//			event.setUuid(UUID.randomUUID());
+//			event.setTanggalAwal(LocalDate.now());
+//			event.setWaktuAwal(LocalTime.now());
+//			event.setWaktuAkhir(LocalTime.now().plusHours(8L));
+//			event.setLokasi(detectiveConan.vehicles());
+//			event.setPersen(faker.number().randomNumber());
+//			event.setDesc(detectiveConan.characters());
+//			event.setPemegangEvent(adminUser);
+//			Event save = eventRepository.save(event);
+//			if (save.getId() > 0) {
+//				log.info("Adding event - {}", detectiveConan.gadgets());
+//			}
 		};
 	}
 }

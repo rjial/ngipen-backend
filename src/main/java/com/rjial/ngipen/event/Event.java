@@ -72,7 +72,8 @@ public class Event {
     @Column(name = "lokasi_event")
     private String lokasi;
     @NonNull
-    @Column(name = "deskripsi_event", columnDefinition = "LONGTEXT")
+    @Lob
+    @Column(name = "deskripsi_event")
     private String desc;
     @NonNull
     @Column(name = "persen_event")
