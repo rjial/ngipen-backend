@@ -4,6 +4,8 @@ import com.rjial.ngipen.common.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +41,10 @@ public class AuthController {
             response.setMessage("Success");
             response.setStatusCode((long) HttpStatus.OK.value());
             return ResponseEntity.ok(response);
+        } catch (AuthenticationServiceException | BadCredentialsException e) {
+            response.setMessage(e.getMessage());
+            response.setStatusCode((long) HttpStatus.UNAUTHORIZED.value());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (Exception e) {
             response.setMessage(e.getMessage());
             response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
