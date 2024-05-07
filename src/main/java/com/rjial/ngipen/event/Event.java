@@ -72,7 +72,6 @@ public class Event {
     @Column(name = "lokasi_event")
     private String lokasi;
     @NonNull
-    @Lob
     @Column(name = "deskripsi_event")
     private String desc;
     @NonNull

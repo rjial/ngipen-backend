@@ -124,6 +124,7 @@ public class EventService {
             event.setUuid(UUID.randomUUID());
             event.setTanggalAwal(LocalDate.parse(request.getTanggalAwal(), dateFormat));
             event.setWaktuAwal(LocalTime.parse(request.getWaktuAwal(), timeFormat));
+            event.setWaktuAkhir(LocalTime.parse(request.getWaktuAkhir(), timeFormat));
             event.setLokasi(request.getLokasi());
             event.setDesc(request.getDesc());
             event.setPersen(request.getPersen());
