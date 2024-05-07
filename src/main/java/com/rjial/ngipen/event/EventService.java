@@ -42,7 +42,7 @@ public class EventService {
         Response<Page<Event>> response = new Response<>();
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<Event> eventList = eventRepository.findAll(pageable);
+            Page<Event> eventList = eventRepository.findAllByVerifiedStatus(pageable);
             response.setData(eventList);
             response.setStatusCode((long) HttpStatus.OK.value());
             response.setMessage("Returning list of events successfully!");

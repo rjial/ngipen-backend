@@ -18,4 +18,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<JenisTiket> findJenisTiketByUuid(@Param("uuid") UUID uuid);
 
     Page<Event>  findAllByPemegangEvent(UUID pemegangEvent, Pageable pageable);
+    @Query("SELECT e FROM Event e WHERE e.verifyEvent = true")
+    Page<Event> findAllByVerifiedStatus(Pageable pageable);
 }
