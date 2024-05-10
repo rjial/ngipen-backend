@@ -166,8 +166,10 @@ public class PaymentService {
     public PaymentTransaction getPaymentDetail(String uuid, User user) {
         try {
             PaymentTransaction paymentTransaction = paymentTransactionRepository.findPaymentTransactionByUuid(UUID.fromString(uuid)).orElseThrow();
-            if (!paymentTransaction.getUser().getId().equals(user.getId())) {
-                throw new DataIntegrityViolationException("Fetching payment transaction failed");
+            if (user.getLevel().equals(Level.USER)) {
+                if (!paymentTransaction.getUser().getId().equals(user.getId())) {
+                    throw new DataIntegrityViolationException("Fetching payment transaction failed");
+                }
             }
             return paymentTransaction;
         } catch (Exception exc) {
@@ -265,6 +267,24 @@ public class PaymentService {
             }
         } else {
             throw new BadRequestException("Anda bukan pemegang event ini");
+        }
+    }
+
+    public PaymentTransaction getPaymentDetail(String uuid, User user, String uuidEvent) {
+        try {
+            PaymentTransaction paymentTransaction = paymentTransactionRepository.findPaymentTransactionByUuid(UUID.fromString(uuid)).orElseThrow();
+            Event eventByUuid = eventRepository.findEventByUuid(UUID.fromString(uuidEvent));
+            if (eventByUuid != null) {
+                if (eventByUuid.getPemegangEvent().getId().equals(user.getId())) {
+                    return paymentTransactionRepository.findFirstByIdAndEvent(user.getId(), eventByUuid.getId(), paymentTransaction.getId()).orElseThrow();
+                } else {
+                    throw new BadRequestException("Anda bukan pemegang event ini");
+                }
+            } else {
+                throw new NotFoundException("Event tidak ditemukan");
+            }
+        } catch (Exception exc) {
+            throw new DataIntegrityViolationException("Fetching payment transaction failed : " + exc.getMessage(), exc);
         }
     }
 }

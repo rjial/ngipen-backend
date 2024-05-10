@@ -27,7 +27,7 @@ public class JenisTiket {
     @Column(name = "harga_jenistiket")
     private Long harga;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "id_event", referencedColumnName = "id_event")
     @JsonSerialize(using = EventSerializer.class)
     @Schema(type = "string", example = "Utsuru 8.5")

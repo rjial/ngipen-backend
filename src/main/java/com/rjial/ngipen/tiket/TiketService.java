@@ -22,6 +22,8 @@ import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import com.rjial.ngipen.event.Event;
 import com.rjial.ngipen.event.EventRepository;
+import com.rjial.ngipen.payment.PaymentTransaction;
+import com.rjial.ngipen.payment.PaymentTransactionRepository;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
@@ -29,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
@@ -46,6 +49,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -62,6 +66,8 @@ public class TiketService {
 
     private Algorithm algorithm;
     private JWTVerifier jwtVerifier;
+    @Autowired
+    private PaymentTransactionRepository paymentTransactionRepository;
 
     public TiketService(Environment env) {
         String tiketKey = env.getProperty("tiket.key");
@@ -219,6 +225,17 @@ public class TiketService {
             return tiketRepository.save(tiket);
         } else {
             throw new BadRequestException("Anda bukan pemegang event dan admin!");
+        }
+    }
+
+    public Page<Tiket> getTiketsFromPaymentTransaction(String uuidPt, String uuidEvent, int page, int size) throws NoSuchFieldException {
+        PaymentTransaction paymentTransaction = paymentTransactionRepository.findPaymentTransactionByUuid(UUID.fromString(uuidPt)).orElseThrow();
+        Event eventByUuid = eventRepository.findEventByUuid(UUID.fromString(uuidEvent));
+        if (eventByUuid != null) {
+            Pageable pageable = PageRequest.of(page, size);
+            return tiketRepository.findTiketByEventAndPaymentTransaction(paymentTransaction.getId(), eventByUuid.getId(), pageable);
+        } else {
+            throw new NoSuchFieldException("Event tidak ditemukan");
         }
     }
 }

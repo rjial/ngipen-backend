@@ -24,4 +24,6 @@ public interface TiketRepository extends JpaRepository<Tiket, Long> {
     Page<Tiket> findTiketByPemegangAcara(@Param("event") Event event, Pageable pageable);
     @Query("SELECT t FROM Tiket t JOIN t.jenisTiket jt JOIN jt.event e WHERE e = :event")
     Page<Tiket> findTiketByAdmin(@Param("event") Event event, Pageable pageable);
+    @Query("SELECT t FROM Tiket t JOIN t.jenisTiket jt JOIN jt.event e JOIN t.paymentTransaction pt WHERE pt.id = :idPt AND e.id = :idEvent")
+    Page<Tiket> findTiketByEventAndPaymentTransaction(@Param("idPt") long idPt, @Param("idEvent") long idEvent, Pageable pageable);
 }
