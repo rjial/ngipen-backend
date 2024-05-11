@@ -53,4 +53,5 @@ public class TiketItemListResponse {
     private LocalTime waktuAkhir;
     private String lokasi;
     private Boolean statusVerifikasi;
+    private UUID paymentTransaction;
 }

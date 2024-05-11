@@ -2,6 +2,7 @@ package com.rjial.ngipen.auth;
 
 import com.rjial.ngipen.common.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.*;
@@ -10,6 +11,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -111,6 +113,15 @@ public class UserService {
             return userRepository.findAll(exampleUser, pageable);
         } catch (Exception exc) {
             throw new Exception("Failed to search user : " + exc.getMessage(), exc);
+        }
+    }
+    public String deleteUser(String uuid, User user) throws BadRequestException, NoSuchElementException {
+        if (user.getLevel().equals(Level.ADMIN)) {
+            User user1 = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
+            userRepository.delete(user1);
+            return "Deleting user successfully";
+        } else {
+            throw new BadRequestException("Anda bukan administrator!");
         }
     }
 }

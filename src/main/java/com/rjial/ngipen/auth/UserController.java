@@ -3,6 +3,7 @@ package com.rjial.ngipen.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rjial.ngipen.common.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -91,5 +92,14 @@ public class UserController {
     @PutMapping("")
     public ResponseEntity<Response<UserCreatedUpdatedResponse>> updateUser(@AuthenticationPrincipal User user, @RequestBody UserUpdatedRequest request) throws Exception {
         return new ResponseEntity<>(userService.updateUser(request, user), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<Response<String>> deleteUserForAdmin(@AuthenticationPrincipal User user, @PathVariable("uuid") String uuid) throws BadRequestException {
+        Response<String> response = new Response<>();
+        response.setData(userService.deleteUser(uuid, user));
+        response.setMessage(userService.deleteUser(uuid, user));
+        response.setStatusCode((long) HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
 }

@@ -83,7 +83,7 @@ public class TiketService {
 //        PageRequest pageRequest = PageRequest.of(page, size);
         List<Tiket> allByUser = tiketRepository.findAllByUser(user);
         List<TiketItemListResponse> collect = allByUser.stream().map(item -> {
-            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket());
+            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket(), item.getPaymentTransaction().getUuid());
         }).toList();
         return new TiketListResponse(collect);
     }
@@ -91,7 +91,7 @@ public class TiketService {
     public TiketPageListResponse getAllTiket(User user, Pageable pageable) {
         Page<Tiket> allByUser = tiketRepository.findAllByUser(user, pageable);
         Page<TiketItemListResponse> map = allByUser.map(item -> {
-            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket());
+            return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket(), item.getPaymentTransaction().getUuid());
         });
         return new TiketPageListResponse(map);
     }
@@ -177,7 +177,7 @@ public class TiketService {
                 if (tiket.getStatusTiket()) throw new BadRequestException("Anda tidak bisa menverifikasi tiket yang sudah terverifikasi");
                 tiket.setStatusTiket(true);
                 Tiket item = tiketRepository.save(tiket);
-                return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket());
+                return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), item.getUser().getName(), item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket(), item.getPaymentTransaction().getUuid());
             } else {
                 throw new BadRequestException("Event tidak ditemukan");
             }
@@ -186,7 +186,7 @@ public class TiketService {
     public TiketItemListResponse getTiketFromUUID(String uuid, User user) {
         try {
             Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
-            TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir(), tiket.getJenisTiket().getEvent().getLokasi(), tiket.getStatusTiket()   );
+            TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), tiket.getUser().getName(), tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir(), tiket.getJenisTiket().getEvent().getLokasi(), tiket.getStatusTiket(), tiket.getPaymentTransaction().getUuid());
             if (user.getLevel().equals(Level.PEMEGANG_ACARA)) {
                 if (tiket.getJenisTiket().getEvent().getPemegangEvent().getId().equals(user.getId())) {
                     return tiketItemListResponse;
