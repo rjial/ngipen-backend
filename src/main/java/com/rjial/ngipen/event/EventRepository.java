@@ -17,7 +17,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query(value = "select jn from JenisTiket jn join jn.event e where e.uuid = :uuid")
     List<JenisTiket> findJenisTiketByUuid(@Param("uuid") UUID uuid);
 
-    Page<Event>  findAllByPemegangEvent(UUID pemegangEvent, Pageable pageable);
+    @Query("SELECT e from Event e JOIN e.pemegangEvent pe WHERE pe.id = :idPE")
+    Page<Event>  findAllByPemegangEvent(@Param("idPE") long idPe, Pageable pageable);
     @Query("SELECT e FROM Event e WHERE e.verifyEvent = true")
     Page<Event> findAllByVerifiedStatus(Pageable pageable);
 }

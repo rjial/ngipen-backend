@@ -57,7 +57,7 @@ public class EventService {
             Pageable pageable = PageRequest.of(page, size);
             Page<Event> allByPemegangEvent;
             if(user.getLevel().equals(Level.PEMEGANG_ACARA)) {
-                allByPemegangEvent = eventRepository.findAllByPemegangEvent(user.getUuid(), pageable);
+                allByPemegangEvent = eventRepository.findAllByPemegangEvent(user.getId(), pageable);
             } else if(user.getLevel().equals(Level.ADMIN)) {
                 allByPemegangEvent  = eventRepository.findAll(pageable);
             } else {
