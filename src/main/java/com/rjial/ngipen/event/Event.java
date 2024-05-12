@@ -21,6 +21,7 @@ import com.rjial.ngipen.tiket.JenisTiket;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.Length;
 import org.springframework.format.annotation.DateTimeFormat;
 
 @Data
@@ -72,7 +73,7 @@ public class Event {
     @Column(name = "lokasi_event")
     private String lokasi;
     @NonNull
-    @Column(name = "deskripsi_event")
+    @Column(name = "deskripsi_event", length = Length.LONG32)
     private String desc;
     @NonNull
     @Column(name = "persen_event")
