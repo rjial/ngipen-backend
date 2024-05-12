@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
             status = HttpStatus.BAD_REQUEST;
         }
         res.setStatusCode(Long.valueOf(status.value()));
-        res.setMessage(ex.getMessage());
+        res.setMessage(ex.getMessage() + " - error");
         return ResponseEntity
             .status(status)
             .body(res);
