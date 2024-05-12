@@ -34,6 +34,8 @@ public class UserService {
             createUser.setHp(request.getHp());
             createUser.setAddress(request.getAddress());
             createUser.setLevel(request.getLevel());
+            createUser.setEmail(request.getEmail());
+            createUser.setUuid(UUID.randomUUID());
             createUser.setPassword(passwordEncoder.encode(request.getPassword()));
             User save = userRepository.save(createUser);
             if (save.getId() > 0) {
@@ -61,7 +63,10 @@ public class UserService {
             createUser.setHp(request.getHp());
             createUser.setAddress(request.getAddress());
             createUser.setLevel(request.getLevel());
-            createUser.setPassword(passwordEncoder.encode(request.getPassword()));
+            createUser.setEmail(request.getEmail());
+            if (request.getPassword() != null) {
+                createUser.setPassword(passwordEncoder.encode(request.getPassword()));
+            }
             User save = userRepository.save(createUser);
             if (save.getId() > 0) {
                 UserCreatedUpdatedResponse userCreatedUpdatedResponse = new UserCreatedUpdatedResponse(save);
