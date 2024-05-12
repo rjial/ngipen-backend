@@ -10,6 +10,8 @@ RUN mvn package -DskipTests
 
 FROM eclipse-temurin:17.0.10_7-jre-alpine
 
+EXPOSE 8080
+
 COPY --from=builder /app/target/ngipen-*.jar /ngipen.jar
 
 CMD ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/ngipen.jar"]
