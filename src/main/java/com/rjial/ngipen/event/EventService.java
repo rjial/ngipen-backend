@@ -142,7 +142,7 @@ public class EventService {
             response.setData(eventItemResponse);
             return response;
         } catch (Exception exc) {
-            throw new Exception("Event failed created", exc);
+            throw new Exception("Event failed created : " + exc.getMessage(), exc);
         }
     }
 
