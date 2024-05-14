@@ -112,7 +112,6 @@ public class UserService {
             throw new Exception("Failed to load users : " + exception.getMessage(), exception);
         }
     }
-Created
     public User findUserByUUID(String uuid, User user) throws Exception {
         if (!(user.getLevel().equals(Level.ADMIN))) throw new BadCredentialsException("Anda bukan admin");
         try {
