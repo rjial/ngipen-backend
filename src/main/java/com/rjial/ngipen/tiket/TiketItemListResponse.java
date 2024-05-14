@@ -28,7 +28,7 @@ import java.util.UUID;
 public class TiketItemListResponse {
     private UUID uuid;
     private Boolean statusTiket;
-    private String namaUser;
+    private TiketUserItemListResponse user;
     private String jenisTiket;
     private String event;
     @JsonSerialize(using = LocalDateSerializer.class)
