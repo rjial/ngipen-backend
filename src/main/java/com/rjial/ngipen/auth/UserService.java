@@ -52,7 +52,7 @@ public class UserService {
         return response;
     }
 
-    public Response<UserCreatedUpdatedResponse> updateUser(UserUpdatedRequest request, User user) throws Exception {
+    public Response<UserCreatedUpdatedResponse> updateSelfUser(UserSelfUpdatedRequest request, User user) throws Exception {
         if (user.getLevel() != Level.ADMIN) {
             throw new BadCredentialsException("Mengubah user harus mempunyai role Admin");
         }
@@ -82,6 +82,27 @@ public class UserService {
         return response;
     }
 
+    public UserCreatedUpdatedResponse updateUser(UserUpdatedRequest request, User user, String uuid) throws Exception {
+        if (user.getLevel() != Level.ADMIN) {
+            throw new BadCredentialsException("Mengubah user harus mempunyai role Admin");
+        }
+            User updatedUser = userRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
+            updatedUser.setName(request.getName());
+            updatedUser.setHp(request.getHp());
+            updatedUser.setAddress(request.getAddress());
+            updatedUser.setLevel(request.getLevel());
+            updatedUser.setEmail(request.getEmail());
+            if (!request.getPassword().isEmpty()) {
+                updatedUser.setPassword(passwordEncoder.encode(request.getPassword()));
+            }
+            User save = userRepository.save(updatedUser);
+            if (save.getId() > 0) {
+                return new UserCreatedUpdatedResponse(save);
+            } else {
+                throw new DataIntegrityViolationException("User failed updated");
+            }
+    }
+
     public Page<User> findAll(Pageable pageable, User user) throws Exception {
         if (!(user.getLevel().equals(Level.ADMIN))) throw new BadCredentialsException("Anda bukan admin");
         try {
@@ -91,7 +112,7 @@ public class UserService {
             throw new Exception("Failed to load users : " + exception.getMessage(), exception);
         }
     }
-
+Created
     public User findUserByUUID(String uuid, User user) throws Exception {
         if (!(user.getLevel().equals(Level.ADMIN))) throw new BadCredentialsException("Anda bukan admin");
         try {

@@ -5,10 +5,12 @@ import com.rjial.ngipen.common.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -89,9 +91,28 @@ public class UserController {
         return new ResponseEntity<>(userService.insertUser(request, user), HttpStatus.OK);
     }
 
-    @PutMapping("")
-    public ResponseEntity<Response<UserCreatedUpdatedResponse>> updateUser(@AuthenticationPrincipal User user, @RequestBody UserUpdatedRequest request) throws Exception {
-        return new ResponseEntity<>(userService.updateUser(request, user), HttpStatus.OK);
+    @PatchMapping("")
+    public ResponseEntity<Response<UserCreatedUpdatedResponse>> updateMyUser(@AuthenticationPrincipal User user, @RequestBody UserSelfUpdatedRequest request) throws Exception {
+        return new ResponseEntity<>(userService.updateSelfUser(request, user), HttpStatus.OK);
+    }
+
+    @PatchMapping("/{uuid}")
+    public ResponseEntity<Response<UserCreatedUpdatedResponse>> updateUser(@AuthenticationPrincipal User user, @RequestBody UserUpdatedRequest request, @PathVariable("uuid") String uuid) throws Exception {
+        Response<UserCreatedUpdatedResponse> response = new Response<>();
+        try {
+            response.setData(userService.updateUser(request, user, uuid));
+            response.setMessage("Successfully update user!");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (DataIntegrityViolationException e) {
+            response.setMessage("Failed to update user : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (BadCredentialsException e) {
+            response.setMessage("Failed to update user : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.BAD_GATEWAY.value());
+            return new ResponseEntity<>(response, HttpStatus.BAD_GATEWAY);
+        }
     }
 
     @DeleteMapping("/{uuid}")

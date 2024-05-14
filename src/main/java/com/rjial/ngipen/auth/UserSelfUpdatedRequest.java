@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class UserUpdatedRequest {
+public class UserSelfUpdatedRequest {
 
     private String email;
     private String name;
@@ -17,4 +17,6 @@ public class UserUpdatedRequest {
     private String address;
     private Level level;
     private String password;
+    private Long id;
+
 }
