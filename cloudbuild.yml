@@ -16,7 +16,7 @@ steps:
          "--image",
          "asia-southeast2-docker.pkg.dev/$PROJECT_ID/ngipen-backend/ngipen-backend/$_SERVICE_NAME:$COMMIT_SHA",
          "--region",
-         "global",
+         "us-central1",
          "--platform",
          "managed",
          "--allow-unauthenticated",
