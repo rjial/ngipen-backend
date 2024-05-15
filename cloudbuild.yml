@@ -1,10 +1,10 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
     args:
-      [ "build", "-t", "gcr.io/$PROJECT_ID/github.com/rjial/ngipen-backend:${SHORT_SHA}", "." ]
+      [ "build", "-t", "gcr.io/$PROJECT_ID/${_SERVICE_NAME}:${SHORT_SHA}", "." ]
 
   - name: "gcr.io/cloud-builders/docker"
-    args: [ "push", "gcr.io/$PROJECT_ID/github.com/rjial/ngipen-backend" ]
+    args: [ "push", "gcr.io/$PROJECT_ID/${_SERVICE_NAME}" ]
 
   - name: "gcr.io/cloud-builders/gcloud"
     args:
@@ -13,7 +13,7 @@ steps:
          "deploy",
          "${_SERVICE_NAME}",
          "--image",
-         "gcr.io/$PROJECT_ID/github.com/rjial/ngipen-backend:${SHORT_SHA}",
+         "gcr.io/$PROJECT_ID/${_SERVICE_NAME}:${SHORT_SHA}",
          "--region",
          "global",
          "--platform",
