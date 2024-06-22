@@ -1,5 +1,6 @@
 package com.rjial.ngipen.payment;
 
+import com.midtrans.httpclient.error.MidtransError;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.NotFoundException;
 import com.rjial.ngipen.common.Response;
@@ -15,6 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/payment")
@@ -104,6 +106,29 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         } catch (Exception e) {
             response.setMessage("Failed to get tikets : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @GetMapping("/pay/{uuid}")
+    public ResponseEntity<Response<PaymentOrderResponse>> doPaySnap(@AuthenticationPrincipal User user, @PathVariable("uuid") String uuidPaymentTransaction) {
+        Response<PaymentOrderResponse> response = new Response<>();
+        try {
+            response.setData(paymentService.doPaymentSnapResponse(uuidPaymentTransaction));
+            response.setMessage("Successful to reach payment gateway");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (MidtransError e) {
+            response.setMessage("Failed to reach payment gateway : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (NoSuchElementException e) {
+            response.setMessage("Failed to reach payment gateway : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            response.setMessage("Failed to reach payment gateway : " + e.getMessage());
             response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }

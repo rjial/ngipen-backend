@@ -2,6 +2,7 @@ package com.rjial.ngipen.payment;
 
 import com.midtrans.Config;
 import com.midtrans.httpclient.SnapApi;
+import com.midtrans.httpclient.error.MidtransError;
 import com.rjial.ngipen.auth.Level;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.NotFoundException;
@@ -36,12 +37,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public class PaymentService {
 
-    private String clientKey;
-
-    private String serverKey;
-
-    private String midtransNotificationUrl;
-
     private Boolean isProduction = false;
 
     @Autowired
@@ -62,26 +57,19 @@ public class PaymentService {
     @Autowired
     private EventRepository eventRepository;
 
-    public PaymentService(Environment env) {
-        clientKey = env.getProperty("midtrans.clientkey");
-        log.info(clientKey);
-        assert clientKey != null;
-        serverKey = env.getProperty("midtrans.serverkey");
-        log.info(serverKey);
-        assert serverKey != null;
-        this.midtransNotificationUrl = env.getProperty("midtrans.notification-url");
-    }
+    @Autowired
+    private PaymentMidtransConfig paymentMidtransConfig;
 
     public Response<PaymentOrderResponse> payment(PaymentOrderRequest request, User user) {
         List<Checkout> checkouts = new ArrayList<>();
         Response<PaymentOrderResponse> response = new Response<>();
-        Config snapConfig = Config.builder()
-                .setServerKey(serverKey)
-                .setClientKey(clientKey)
-                .setIsProduction(false)
-                .enableLog(true)
-                .setPaymentOverrideNotification(midtransNotificationUrl)
-                .build();
+//        Config snapConfig = Config.builder()
+//                .setServerKey(serverKey)
+//                .setClientKey(clientKey)
+//                .setIsProduction(false)
+//                .enableLog(true)
+//                .setPaymentOverrideNotification(midtransNotificationUrl)
+//                .build();
         try {
             AtomicLong total = new AtomicLong(0);
             request.getOrders().forEach(uuid -> {
@@ -101,22 +89,22 @@ public class PaymentService {
             paymentTransaction.setStatus(PaymentStatus.WAITING_FOR_VERIFY);
             paymentTransaction.setDate(LocalDateTime.now());
             paymentTransaction.setUser(user);
-            Map<String, Object> midtransParams = new HashMap<>();
-            Map<String, Object> midtransTransactions = new HashMap<>();
-            Map<String, Object> midtransCreditCard = new HashMap<>();
-            Map<String, Object> midtransCustomerDetails = new HashMap<>();
-                midtransCustomerDetails.put("first_name", user.firstName());
-                midtransCustomerDetails.put("last_name", user.lastName());
-                midtransCustomerDetails.put("email", user.getEmail());
-                midtransCustomerDetails.put("phone", user.getHp());
-                midtransParams.put("customer_details", midtransCustomerDetails);
-            midtransTransactions.put("order_id", paymentUUID.toString());
-            midtransTransactions.put("gross_amount", total.toString());
-            midtransCreditCard.put("secure", "true");
-            midtransParams.put("transaction_details", midtransTransactions);
-            midtransParams.put("credit_card", midtransCreditCard);
-            String snapTransactionToken = SnapApi.createTransactionToken(midtransParams, snapConfig);
-            paymentTransaction.setSnapToken(snapTransactionToken);
+//            Map<String, Object> midtransParams = new HashMap<>();
+//            Map<String, Object> midtransTransactions = new HashMap<>();
+//            Map<String, Object> midtransCreditCard = new HashMap<>();
+//            Map<String, Object> midtransCustomerDetails = new HashMap<>();
+//                midtransCustomerDetails.put("first_name", user.firstName());
+//                midtransCustomerDetails.put("last_name", user.lastName());
+//                midtransCustomerDetails.put("email", user.getEmail());
+//                midtransCustomerDetails.put("phone", user.getHp());
+//                midtransParams.put("customer_details", midtransCustomerDetails);
+//            midtransTransactions.put("order_id", paymentUUID.toString());
+//            midtransTransactions.put("gross_amount", total.toString());
+//            midtransCreditCard.put("secure", "true");
+//            midtransParams.put("transaction_details", midtransTransactions);
+//            midtransParams.put("credit_card", midtransCreditCard);
+//            String snapTransactionToken = SnapApi.createTransactionToken(midtransParams, snapConfig);
+//            paymentTransaction.setSnapToken(snapTransactionToken);
             PaymentTransaction savedPayment = paymentTransactionRepository.save(paymentTransaction);
             checkouts.forEach(checkout -> {
                 PaymentHistory paymentHistory = new PaymentHistory();
@@ -140,7 +128,7 @@ public class PaymentService {
 //                    }
                 }
             });
-            PaymentOrderResponse paymentOrderResponse = new PaymentOrderResponse(savedPayment, snapTransactionToken, snapConfig.getClientKey());
+            PaymentOrderResponse paymentOrderResponse = new PaymentOrderResponse(savedPayment, null, null);
             response.setData(paymentOrderResponse);
             response.setMessage("Payment successfully");
             response.setStatusCode((long) HttpStatus.OK.value());
@@ -286,5 +274,42 @@ public class PaymentService {
         } catch (Exception exc) {
             throw new DataIntegrityViolationException("Fetching payment transaction failed : " + exc.getMessage(), exc);
         }
+    }
+
+    private PaymentTransaction doPaymentSnap(PaymentTransaction paymentTransaction) throws MidtransError, NoSuchElementException {
+            User user = paymentTransaction.getUser();
+//            if(paymentTransaction.getSnapToken() == null) {
+                Map<String, Object> midtransParams = new HashMap<>();
+                Map<String, Object> midtransTransactions = new HashMap<>();
+                Map<String, Object> midtransCreditCard = new HashMap<>();
+                Map<String, Object> midtransCustomerDetails = new HashMap<>();
+                midtransCustomerDetails.put("first_name", user.firstName());
+                midtransCustomerDetails.put("last_name", user.lastName());
+                midtransCustomerDetails.put("email", user.getEmail());
+                midtransCustomerDetails.put("phone", user.getHp());
+                midtransParams.put("customer_details", midtransCustomerDetails);
+                midtransTransactions.put("order_id", paymentTransaction.getUuid().toString());
+                midtransTransactions.put("gross_amount", paymentTransaction.getTotal().toString());
+                midtransCreditCard.put("secure", "true");
+                midtransParams.put("transaction_details", midtransTransactions);
+                midtransParams.put("credit_card", midtransCreditCard);
+                log.info(paymentMidtransConfig.clientKey);
+                log.info(paymentMidtransConfig.serverKey);
+                String snapTransactionToken = SnapApi.createTransactionToken(midtransParams, paymentMidtransConfig.snapConfig());
+                paymentTransaction.setSnapToken(snapTransactionToken);
+                return paymentTransactionRepository.save(paymentTransaction);
+//            } else {
+//                return paymentTransaction;
+//            }
+    }
+
+    public PaymentOrderResponse doPaymentSnapResponse(PaymentTransaction paymentTransaction) throws MidtransError, NoSuchElementException {
+        PaymentTransaction transaction = doPaymentSnap(paymentTransaction);
+        return new PaymentOrderResponse(transaction, transaction.getSnapToken(), paymentMidtransConfig.snapConfig().getClientKey());
+    }
+
+    public PaymentOrderResponse doPaymentSnapResponse(String uuidPayment) throws MidtransError, NoSuchElementException {
+        PaymentTransaction transaction = paymentTransactionRepository.findPaymentTransactionByUuid(UUID.fromString(uuidPayment)).orElseThrow();
+        return doPaymentSnapResponse(transaction);
     }
 }
