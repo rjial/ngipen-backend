@@ -8,6 +8,7 @@ import com.rjial.ngipen.tiket.Tiket;
 import com.rjial.ngipen.tiket.TiketItemListResponse;
 import com.rjial.ngipen.tiket.TiketService;
 import org.apache.coyote.BadRequestException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,56 @@ public class PaymentController {
         paymentTransactionResponse.setMessage("Get payment transaction successfully");
         paymentTransactionResponse.setStatusCode((long) HttpStatus.OK.value());
         return ResponseEntity.ok(paymentTransactionResponse);
+    }
+
+    @GetMapping("/{uuid}/status")
+    public ResponseEntity<Response<String>> getPaymentStatus(@AuthenticationPrincipal User user, @PathVariable("uuid") String uuid) {
+        Response<String> jsonObjectResponse = new Response<>();
+        try {
+            jsonObjectResponse.setData(paymentService.getPaymentStatus(uuid, user).toString());
+            jsonObjectResponse.setMessage("Successfully returning payment status from payment gateway");
+            jsonObjectResponse.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(jsonObjectResponse);
+        } catch (MidtransError e) {
+            jsonObjectResponse.setMessage("Failed returning payment status from payment gateway : " + e.getMessage());
+            jsonObjectResponse.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(jsonObjectResponse);
+        } catch (BadRequestException e) {
+            jsonObjectResponse.setMessage(e.getMessage());
+            jsonObjectResponse.setStatusCode((long) HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(jsonObjectResponse);
+        } catch (NoSuchElementException e) {
+            jsonObjectResponse.setMessage("Failed returning payment status from payment gateway : " + e.getMessage());
+            jsonObjectResponse.setStatusCode((long) HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(jsonObjectResponse);
+        } catch (Exception e) {
+            jsonObjectResponse.setMessage("Failed returning payment status from server : " + e.getMessage());
+            jsonObjectResponse.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(jsonObjectResponse);
+        }
+    }
+
+    @GetMapping("/{uuid}/histories")
+    public ResponseEntity<Response<List<PaymentHistory>>> getPaymentHistories(@PathVariable("uuid") String uuid, @AuthenticationPrincipal User user) {
+        Response<List<PaymentHistory>> response = new Response<>();
+        try {
+            response.setData(paymentService.getPaymentHistoryFromUUID(uuid, user));
+            response.setMessage("Successfully returning payment history");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            response.setMessage("Failed returning payment history : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (NoSuchElementException e) {
+            response.setMessage("Failed returning payment history : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            response.setMessage("Failed returning payment history from server : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     @PostMapping("/notification")

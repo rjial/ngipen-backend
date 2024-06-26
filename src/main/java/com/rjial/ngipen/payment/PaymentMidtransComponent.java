@@ -1,13 +1,18 @@
 package com.rjial.ngipen.payment;
 
 import com.midtrans.Config;
+import com.midtrans.ConfigFactory;
+import com.midtrans.httpclient.CoreApi;
+import com.midtrans.httpclient.error.MidtransError;
+import com.midtrans.service.MidtransCoreApi;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class PaymentMidtransConfig {
+public class PaymentMidtransComponent {
 
     public String clientKey;
 
@@ -15,7 +20,14 @@ public class PaymentMidtransConfig {
 
     public String midtransNotificationUrl;
 
-    public PaymentMidtransConfig(Environment env) {
+    private final MidtransCoreApi coreApi = new ConfigFactory(Config.builder()
+            .setServerKey("SB-Mid-server-Fq6NnVTKcsXINGi9bqX1y-Na")
+            .setClientKey(clientKey)
+            .setIsProduction(false)
+            .enableLog(true)
+            .build()).getCoreApi();
+
+    public PaymentMidtransComponent(Environment env) {
         clientKey = env.getProperty("midtrans.clientkey");
         log.info(clientKey);
         assert clientKey != null;
@@ -37,6 +49,10 @@ public class PaymentMidtransConfig {
                 .enableLog(true)
                 .setPaymentOverrideNotification(midtransNotificationUrl)
                 .build();
+    }
+
+    public JSONObject checkTransaction(String transactionId) throws MidtransError {
+        return coreApi.checkTransaction(transactionId);
     }
 
 }

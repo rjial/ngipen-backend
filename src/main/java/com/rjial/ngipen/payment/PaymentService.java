@@ -1,6 +1,5 @@
 package com.rjial.ngipen.payment;
 
-import com.midtrans.Config;
 import com.midtrans.httpclient.SnapApi;
 import com.midtrans.httpclient.error.MidtransError;
 import com.rjial.ngipen.auth.Level;
@@ -15,9 +14,8 @@ import com.rjial.ngipen.tiket.TiketVerification;
 import com.rjial.ngipen.tiket.TiketVerificationRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,13 +23,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @Slf4j
@@ -58,7 +54,7 @@ public class PaymentService {
     private EventRepository eventRepository;
 
     @Autowired
-    private PaymentMidtransConfig paymentMidtransConfig;
+    private PaymentMidtransComponent paymentMidtransComponent;
 
     public Response<PaymentOrderResponse> payment(PaymentOrderRequest request, User user) {
         List<Checkout> checkouts = new ArrayList<>();
@@ -162,6 +158,30 @@ public class PaymentService {
             return paymentTransaction;
         } catch (Exception exc) {
             throw new DataIntegrityViolationException("Fetching payment transaction failed", exc);
+        }
+    }
+
+    public JSONObject getPaymentStatus(String uuid, User user) throws BadRequestException, MidtransError, NoSuchElementException {
+        PaymentTransaction paymentTransaction = paymentTransactionRepository.findPaymentTransactionByUuid(UUID.fromString(uuid)).orElseThrow();
+        if (user.getLevel().equals(Level.USER)) {
+            if (!paymentTransaction.getUser().getId().equals(user.getId())) {
+                throw new BadRequestException("Fetching payment transaction failed : Anda bukan pemilik dari payment transaction ini!");
+            }
+            return paymentMidtransComponent.checkTransaction(paymentTransaction.getUuid().toString());
+        } else if(user.getLevel().equals(Level.PEMEGANG_ACARA)) {
+            AtomicBoolean isAllowToSee = new AtomicBoolean(false);
+            paymentTransaction.getTikets().forEach(tiket -> {
+                if (tiket.getJenisTiket().getEvent().getPemegangEvent().getId().equals(user.getId())) {
+                    isAllowToSee.set(true);
+                }
+            });
+            if (isAllowToSee.get()) {
+                return paymentMidtransComponent.checkTransaction(paymentTransaction.getUuid().toString());
+            } else {
+                throw new BadRequestException("Fetching payment transaction failed : Anda bukan pemilik event dari payment transaction ini!");
+            }
+        } else {
+            return paymentMidtransComponent.checkTransaction(paymentTransaction.getUuid().toString());
         }
     }
 
@@ -276,6 +296,21 @@ public class PaymentService {
         }
     }
 
+    public List<PaymentHistory> getPaymentHistoryFromUUID(String uuid, User user) throws BadRequestException, NoSuchElementException {
+            PaymentTransaction paymentTransaction = paymentTransactionRepository.findPaymentTransactionByUuid(UUID.fromString(uuid)).orElseThrow();
+            if (user.getLevel().equals(Level.USER)) {
+                if (paymentTransaction.getUser().getId().equals(user.getId())) {
+                    return paymentTransaction.getPaymentHistories();
+                } else {
+                    throw new BadRequestException("Anda bukan pemilik dari payment transaction ini!");
+                }
+            } else if(user.getLevel().equals(Level.ADMIN)) {
+                return paymentTransaction.getPaymentHistories();
+            } else {
+                throw new BadRequestException("Anda bukan pemilik dari payment transaction ini!");
+            }
+    }
+
     private PaymentTransaction doPaymentSnap(PaymentTransaction paymentTransaction) throws MidtransError, NoSuchElementException {
             User user = paymentTransaction.getUser();
 //            if(paymentTransaction.getSnapToken() == null) {
@@ -293,9 +328,9 @@ public class PaymentService {
                 midtransCreditCard.put("secure", "true");
                 midtransParams.put("transaction_details", midtransTransactions);
                 midtransParams.put("credit_card", midtransCreditCard);
-                log.info(paymentMidtransConfig.clientKey);
-                log.info(paymentMidtransConfig.serverKey);
-                String snapTransactionToken = SnapApi.createTransactionToken(midtransParams, paymentMidtransConfig.snapConfig());
+                log.info(paymentMidtransComponent.clientKey);
+                log.info(paymentMidtransComponent.serverKey);
+                String snapTransactionToken = SnapApi.createTransactionToken(midtransParams, paymentMidtransComponent.snapConfig());
                 paymentTransaction.setSnapToken(snapTransactionToken);
                 return paymentTransactionRepository.save(paymentTransaction);
 //            } else {
@@ -304,8 +339,30 @@ public class PaymentService {
     }
 
     public PaymentOrderResponse doPaymentSnapResponse(PaymentTransaction paymentTransaction) throws MidtransError, NoSuchElementException {
-        PaymentTransaction transaction = doPaymentSnap(paymentTransaction);
-        return new PaymentOrderResponse(transaction, transaction.getSnapToken(), paymentMidtransConfig.snapConfig().getClientKey());
+        PaymentTransaction transaction = null;
+        if (paymentTransaction.getSnapToken() == null) {
+            transaction = doPaymentSnap(paymentTransaction);
+        } else {
+            try {
+                JSONObject checkedTransaction = paymentMidtransComponent.checkTransaction(paymentTransaction.getUuid().toString());
+                log.info("CHECKED_TRANSACTION : {}", checkedTransaction.toString());
+                log.info("STATUS_CODE : {}", checkedTransaction.getString("status_code"));
+                log.info("SNAP_TOKEN : {}", paymentTransaction.getSnapToken());
+                log.info("PAYMENT_TRANSACTION: {}", paymentTransaction.getUuid().toString());
+                if (Objects.equals(checkedTransaction.getString("status_code"), "404")) {
+                    transaction = doPaymentSnap(paymentTransaction);
+                } else {
+                    transaction = paymentTransaction;
+                }
+            } catch (MidtransError midtransError) {
+                if (midtransError.getStatusCode() == 404) {
+                    transaction = doPaymentSnap(paymentTransaction);
+                } else {
+                    throw midtransError;
+                }
+            }
+        }
+        return new PaymentOrderResponse(transaction, transaction.getSnapToken(), paymentMidtransComponent.snapConfig().getClientKey());
     }
 
     public PaymentOrderResponse doPaymentSnapResponse(String uuidPayment) throws MidtransError, NoSuchElementException {
