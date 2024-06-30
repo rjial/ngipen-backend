@@ -3,7 +3,13 @@ package com.rjial.ngipen.tiket;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import org.apache.commons.lang3.concurrent.AtomicInitializer;
 import org.apache.coyote.BadRequestException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -11,19 +17,34 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.*;
 
 @RestController
 @RequestMapping("/tiket")
+@Transactional
 public class TiketController {
 
+    private static final Logger log = LoggerFactory.getLogger(TiketController.class);
     @Autowired
     private TiketService tiketService;
+
+    @Autowired
+    private TiketRepository tiketRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+
+    private final ConcurrentMap<String, SseEmitter> sseEmitterMap = new ConcurrentHashMap<>();
 
     @GetMapping("")
     public ResponseEntity<Response<TiketPageListResponse>> getAllTiket(@AuthenticationPrincipal User user, @RequestParam("page") int page, @RequestParam("size") int size) {
@@ -88,4 +109,66 @@ public class TiketController {
             return new ResponseEntity<>(tiketResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @CrossOrigin(origins = "*")
+    @GetMapping(value = "/{uuidTiket}/status", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter getStatusTicket(@PathVariable("uuidTiket") String uuidTiket, @AuthenticationPrincipal User user) {
+        String name = "TIKET_"+ uuidTiket + "_" + user.getUuid().toString();
+        log.info(name);
+        SseEmitter sseEmitter = new SseEmitter(120000L);
+        if (!sseEmitterMap.containsKey(name)) {
+            sseEmitterMap.put(name, sseEmitter);
+
+            ExecutorService sseMvcExecutor = Executors.newCachedThreadPool();
+            if (sseEmitterMap.get(name) != null) {
+                sseMvcExecutor.execute(() -> {
+                    try {
+                        Boolean b = tiketService.checkTiketStatus(uuidTiket, user);
+                        log.info(name);
+                        while (!b) {
+                            b = tiketService.checkTiketStatus(uuidTiket, user);
+                            Set<ResponseBodyEmitter.DataWithMediaType> event = SseEmitter.event()
+                                    .data(tiketService.checkTiketStatus(uuidTiket, user) ? "true" : "false")
+                                    .id(UUID.randomUUID().toString())
+                                    .name("message")
+                                    .build();
+                            if(sseEmitterMap.get(name) != null) {
+                                sseEmitterMap.get(name).send(event);
+                            }
+                            log.info(b.toString());
+                            TimeUnit.SECONDS.sleep(3);
+                        }
+                        sseEmitterMap.get(name).complete();
+                    } catch (NoSuchFieldException | IOException | InterruptedException e) {
+                        sseEmitterMap.get(name).completeWithError(e);
+                    }
+                });
+                sseEmitterMap.get(name).onCompletion(() -> {
+                    sseMvcExecutor.shutdown();
+                    sseEmitterMap.remove(name);
+                    log.info(name + "COMPLETED");
+                });
+                sseEmitterMap.get(name).onTimeout(() -> {
+                    sseMvcExecutor.shutdown();
+                    sseEmitterMap.remove(name);
+                    log.info(name + "TIME OUT");
+                });
+                sseEmitterMap.get(name).onError(throwable -> {
+                    sseMvcExecutor.shutdown();
+                    sseEmitterMap.remove(name);
+                    log.info(name + "ERROR : " + throwable.getMessage());
+                });
+                return sseEmitterMap.get(name);
+            }
+        } else {
+            if (sseEmitterMap.get(name) != null) {
+                log.info(sseEmitterMap.get(name).toString());
+                return sseEmitterMap.get(name);
+            } else {
+                throw new NoSuchElementException("No such element " + name);
+            }
+        }
+        return sseEmitterMap.get(name);
+    }
+
 }

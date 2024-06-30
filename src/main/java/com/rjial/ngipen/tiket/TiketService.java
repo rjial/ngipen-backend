@@ -25,6 +25,9 @@ import com.rjial.ngipen.event.EventRepository;
 import com.rjial.ngipen.payment.PaymentTransaction;
 import com.rjial.ngipen.payment.PaymentTransactionRepository;
 import io.jsonwebtoken.security.Keys;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +38,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.crypto.*;
 import javax.imageio.ImageIO;
@@ -49,10 +53,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@Transactional
 public class TiketService {
 
     @Autowired
@@ -68,6 +76,12 @@ public class TiketService {
     private JWTVerifier jwtVerifier;
     @Autowired
     private PaymentTransactionRepository paymentTransactionRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    private final Map<String, SseEmitter> sseEmitterMap = new ConcurrentHashMap<>();
+
 
     public TiketService(Environment env) {
         String tiketKey = env.getProperty("tiket.key");
@@ -242,4 +256,42 @@ public class TiketService {
             throw new NoSuchFieldException("Event tidak ditemukan");
         }
     }
+
+    public Boolean checkTiketStatus(String uuidTiket, User user) throws BadRequestException, NoSuchFieldException {
+        Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuidTiket)).orElseThrow();
+        if (user.getLevel() == Level.USER) {
+            if (tiket.getUser().getId().equals(user.getId())) {
+                return tiket.getStatusTiket();
+            } else {
+                throw new BadRequestException("Anda bukan pemilik tiket ini");
+            }
+        } else if (user.getLevel() == Level.PEMEGANG_ACARA) {
+            if (tiket.getJenisTiket().getEvent().getPemegangEvent().getId().equals(user.getId())) {
+                return tiket.getStatusTiket();
+            } else {
+                throw new BadRequestException("Anda bukan pemilik event dari tiket ini");
+            }
+        } else if (user.getLevel() == Level.ADMIN) {
+            return tiket.getStatusTiket();
+        }
+        return false;
+    }
+
+//    public SseEmitter getStatusTicket(String uuidTicket, User user) throws NoSuchElementException, BadRequestException {
+//        final SseEmitter emitter = new SseEmitter();
+//        final Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuidTicket)).orElseThrow();
+//        ExecutorService sseExecutorService = Executors.newSingleThreadExecutor();
+//        sseExecutorService.execute(new Runnable() {
+//
+//            @Override
+//            public void run() {
+//                if (tiket.getUser().getId().equals(user.getId())) {
+//
+//                } else {
+//                    emitter.completeWithError(new BadRequestException("Anda bukan pemilik tiket ini!"));
+//                }
+//            }
+//        });
+//
+//    }
 }
