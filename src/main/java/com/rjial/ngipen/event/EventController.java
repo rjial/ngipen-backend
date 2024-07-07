@@ -11,11 +11,13 @@ import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.UUID;
@@ -132,8 +134,8 @@ public class EventController {
         }
     }
 
-    @PostMapping("")
-    public ResponseEntity<Response<EventItemResponse>> insertEvent(@AuthenticationPrincipal User user, @RequestBody AddEventRequest request) throws Exception {
+    @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE    )
+    public ResponseEntity<Response<EventItemResponse>> insertEvent(@AuthenticationPrincipal User user, @ModelAttribute AddEventRequest request) throws Exception {
         return new ResponseEntity<>(eventService.insertEvent(request, user), HttpStatus.OK);
     }
 

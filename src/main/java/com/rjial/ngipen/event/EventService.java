@@ -19,11 +19,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -37,6 +39,8 @@ public class EventService {
     private JenisTiketRepository jenisTiketRepository;
     @Autowired
     private TiketRepository tiketRepository;
+    @Autowired
+    private EventGCPCloudStorageFileUpload eventGCPCloudStorageFileUpload;
 
     public Response<Page<Event>> getAllEvents(int page, int size) throws Exception {
         Response<Page<Event>> response = new Response<>();
@@ -123,11 +127,23 @@ public class EventService {
             event.setName(request.getName());
             event.setUuid(UUID.randomUUID());
             event.setTanggalAwal(LocalDate.parse(request.getTanggalAwal(), dateFormat));
+            log.info(request.getTanggalAkhir());
+            if (!Objects.equals(request.getTanggalAkhir(), "")) {
+                event.setTanggalAkhir(LocalDate.parse(request.getTanggalAkhir(), dateFormat));
+            }
             event.setWaktuAwal(LocalTime.parse(request.getWaktuAwal(), timeFormat));
             event.setWaktuAkhir(LocalTime.parse(request.getWaktuAkhir(), timeFormat));
             event.setLokasi(request.getLokasi());
             event.setDesc(request.getDesc());
-            event.setPersen(request.getPersen());
+            if (!request.getHeaderImageUrl().isEmpty()) {
+                log.info(request.getHeaderImageUrl().getOriginalFilename());
+                String headerImgPath = eventGCPCloudStorageFileUpload.uploadFile(request.getHeaderImageUrl(), UUID.randomUUID().toString());
+                event.setHeaderImageUrl(headerImgPath);
+            }
+            if (!request.getItemImageUrl().isEmpty()) {
+                String itemImgPath = eventGCPCloudStorageFileUpload.uploadFile(request.getItemImageUrl(), UUID.randomUUID().toString());
+                event.setItemImageUrl(itemImgPath);
+            }
             event.setPemegangEvent(user);
             event.setVerifyEvent(false);
             Event eventSaved = eventRepository.save(event);

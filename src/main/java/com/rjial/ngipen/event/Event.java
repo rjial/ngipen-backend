@@ -51,6 +51,21 @@ public class Event {
     @JsonSerialize(using = LocalDateSerializer.class)
     @JsonProperty("tanggal_awal")
     private LocalDate tanggalAwal;
+    @Column(name = "tanggalakhir_event")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonDeserialize(using = LocalDateDeserializer.class)
+    @JsonSerialize(using = LocalDateSerializer.class)
+    @JsonProperty("tanggal_akhir")
+    private LocalDate tanggalAkhir;
+    @Column(name = "headerimageurl_event")
+    @JsonProperty("headerimageurl")
+    @JsonSerialize(using = EventHeaderImgUrlSerializer.class)
+    private String headerImageUrl;
+    @Column(name = "itemimageurl_event")
+    @JsonProperty("itemimageurl")
+    @JsonSerialize(using = EventHeaderImgUrlSerializer.class)
+    private String itemImageUrl;
     @NonNull
     @Column(name = "waktuawal_event")
     @JsonFormat(pattern = "HH:mm")
@@ -75,9 +90,6 @@ public class Event {
     @NonNull
     @Column(name = "deskripsi_event", length = Length.LONG32)
     private String desc;
-    @NonNull
-    @Column(name = "persen_event")
-    private Long persen;
     @NonNull
     @Column(name = "verify_event")
     private Boolean verifyEvent = false;
