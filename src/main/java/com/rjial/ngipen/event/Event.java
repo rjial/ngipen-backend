@@ -95,7 +95,8 @@ public class Event {
     private Boolean verifyEvent = false;
 
     @OneToMany(mappedBy = "event")
-    @JsonIgnore
+//    @JsonIgnore
+    @JsonSerialize(using = EventJenisTiketListSerializer.class)
     private List<JenisTiket> jenisTikets;
 
     @ManyToOne
