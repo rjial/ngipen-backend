@@ -32,20 +32,24 @@ public class CheckoutService {
         Response<Checkout> response = new Response<>();
         Checkout checkout = checkoutRepository.findCheckoutByUuid(uuid).orElseThrow();
         if (checkout.getUser().getId().equals(user.getId())) {
-            if (total < 0) {
-                throw new BadRequestException("Total shouldn't be less than 0");
-            }
-            checkout.setTotal(total);
-            Checkout savedCheckout = checkoutRepository.save(checkout);
-            if (savedCheckout.getId() > 0) {
-                response.setData(savedCheckout);
+            if (total == 0) {
+                checkoutRepository.delete(checkout);                
             } else {
-                throw new BadRequestException("Checkout failed to updated");
+                if (total < 0) {
+                    throw new BadRequestException("Total shouldn't be less than 0");
+                }
+                checkout.setTotal(total);
+                Checkout savedCheckout = checkoutRepository.save(checkout);
+                if (savedCheckout.getId() > 0) {
+                    response.setData(savedCheckout);
+                } else {
+                    throw new BadRequestException("Checkout failed to updated");
+                }
             }
         } else {
             throw new BadCredentialsException("Anda bukan pemilik item checkout ini!");
         }
-        response.setMessage("Item checkout berhasil diupdate");
+        response.setMessage("Item checkout berhasil " + (total == 0 ? "dihapus" : "diupdate"));
         response.setStatusCode((long) HttpStatus.OK.value());
         return response;
     }

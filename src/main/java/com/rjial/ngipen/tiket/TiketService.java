@@ -49,7 +49,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.List;
@@ -188,8 +190,28 @@ public class TiketService {
         Event eventByUuid = eventRepository.findEventByUuid(tiketVerification.getTiketToVerification().getJenisTiket().getEvent().getUuid());
             if (eventByUuid != null) {
                 Tiket tiket = tiketRepository.findByUuid(tiketVerification.getTiketToVerification().getUuid()).orElseThrow();
-                LocalDateTime expiredDateTime = LocalDateTime.of(tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir());
-                if (expiredDateTime.isBefore(LocalDateTime.now())) throw new  BadRequestException("Tiket sudah kadaluarsa");
+                LocalDate tanggalAkhir = tiket.getJenisTiket().getEvent().getTanggalAkhir();
+                LocalDate tanggalAwal = tiket.getJenisTiket().getEvent().getTanggalAwal();
+                LocalTime waktuAwal =            tiket.getJenisTiket().getEvent().getWaktuAwal();
+                LocalTime waktuAkhir = tiket.getJenisTiket().getEvent().getWaktuAkhir();
+
+                if (tanggalAkhir != null) {
+                    if ( LocalDate.now().isEqual(tanggalAwal) || LocalDate.now().isEqual(tanggalAkhir) || (LocalDate.now().isAfter(tanggalAwal) && LocalDate.now().isBefore(tanggalAkhir))) {
+                        if (LocalTime.now().isBefore(waktuAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi sebelum waktu event");
+                        if (LocalTime.now().isAfter(waktuAkhir)) throw new  BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
+                    } else {
+                        if (LocalDate.now().isBefore(tanggalAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi sebelum tanggal awal event");
+                        if (LocalDate.now().isAfter(tanggalAkhir)) throw new  BadRequestException("Tiket tidak bisa diverifikasi setelah tanggal akhir event");
+                    }
+                } else {
+                    if (LocalDate.now().isEqual(tanggalAwal)) {
+                        if (LocalTime.now().isBefore(waktuAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi sebelum waktu event");
+                        if (LocalTime.now().isAfter(waktuAkhir)) throw new  BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
+                    } else {
+                        if (LocalDate.now().isBefore(tanggalAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi sebelum tanggal awal event");
+                        if (LocalDate.now().isAfter(tanggalAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi setelah tanggal awal event");
+                    }
+                }
                 if (tiket.getStatusTiket()) throw new BadRequestException("Anda tidak bisa menverifikasi tiket yang sudah terverifikasi");
                 tiket.setStatusTiket(true);
                 Tiket item = tiketRepository.save(tiket);

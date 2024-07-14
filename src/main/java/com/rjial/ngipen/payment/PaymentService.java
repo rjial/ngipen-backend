@@ -313,7 +313,7 @@ public class PaymentService {
 
     private PaymentTransaction doPaymentSnap(PaymentTransaction paymentTransaction) throws MidtransError, NoSuchElementException {
             User user = paymentTransaction.getUser();
-//            if(paymentTransaction.getSnapToken() == null) {
+            if (paymentTransaction.getTotal() > 0) {
                 Map<String, Object> midtransParams = new HashMap<>();
                 Map<String, Object> midtransTransactions = new HashMap<>();
                 Map<String, Object> midtransCreditCard = new HashMap<>();
@@ -333,6 +333,11 @@ public class PaymentService {
                 String snapTransactionToken = SnapApi.createTransactionToken(midtransParams, paymentMidtransComponent.snapConfig());
                 paymentTransaction.setSnapToken(snapTransactionToken);
                 return paymentTransactionRepository.save(paymentTransaction);
+            } else {
+                paymentTransaction.setStatus(PaymentStatus.ACCEPTED);
+                return paymentTransactionRepository.save(paymentTransaction);
+            }
+//            if(paymentTransaction.getSnapToken() == null) {
 //            } else {
 //                return paymentTransaction;
 //            }
@@ -345,10 +350,6 @@ public class PaymentService {
         } else {
             try {
                 JSONObject checkedTransaction = paymentMidtransComponent.checkTransaction(paymentTransaction.getUuid().toString());
-                log.info("CHECKED_TRANSACTION : {}", checkedTransaction.toString());
-                log.info("STATUS_CODE : {}", checkedTransaction.getString("status_code"));
-                log.info("SNAP_TOKEN : {}", paymentTransaction.getSnapToken());
-                log.info("PAYMENT_TRANSACTION: {}", paymentTransaction.getUuid().toString());
                 if (Objects.equals(checkedTransaction.getString("status_code"), "404")) {
                     transaction = doPaymentSnap(paymentTransaction);
                 } else {
