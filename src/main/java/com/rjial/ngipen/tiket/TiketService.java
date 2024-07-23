@@ -22,6 +22,7 @@ import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import com.rjial.ngipen.event.Event;
 import com.rjial.ngipen.event.EventRepository;
+import com.rjial.ngipen.payment.PaymentStatus;
 import com.rjial.ngipen.payment.PaymentTransaction;
 import com.rjial.ngipen.payment.PaymentTransactionRepository;
 import io.jsonwebtoken.security.Keys;
@@ -119,7 +120,7 @@ public class TiketService {
         try {
             Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuidTiket)).orElseThrow();
             if (tiket.getUser().getId().equals(user.getId())) {
-                LocalDateTime expiredDateTime = LocalDateTime.of(tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir());
+                LocalDateTime expiredDateTime = LocalDateTime.of(tiket.getJenisTiket().getEvent().getTanggalAkhir() != null ? tiket.getJenisTiket().getEvent().getTanggalAkhir() : tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir());
                 String jwtToken = JWT.create()
                         .withIssuer("Ngipen")
                         .withSubject("Ngipen Tiket")
@@ -194,9 +195,9 @@ public class TiketService {
                 LocalDate tanggalAwal = tiket.getJenisTiket().getEvent().getTanggalAwal();
                 LocalTime waktuAwal = tiket.getJenisTiket().getEvent().getWaktuAwal();
                 LocalTime waktuAkhir = tiket.getJenisTiket().getEvent().getWaktuAkhir();
-
+                if (!tiket.getPaymentTransaction().getStatus().equals(PaymentStatus.ACCEPTED)) throw new BadRequestException("Tiket tidak bisa diverifikasi karena pembayaran belum disetujui");
                 if (tanggalAkhir != null) {
-                    if (LocalDate.now().isAfter(tanggalAkhir)) throw new BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
+                    if (LocalDate.now().isAfter(tanggalAkhir))   throw new BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
                     if (LocalDate.now().isBefore(tanggalAwal)) throw new BadRequestException("Tiket tidak bisa diverifikasi sebelum waktu event");
                 } else {
                     if (LocalDate.now().isAfter(tanggalAwal)) throw new BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
@@ -204,6 +205,8 @@ public class TiketService {
                 }
                 if (tiket.getStatusTiket()) throw new BadRequestException("Anda tidak bisa menverifikasi tiket yang sudah terverifikasi");
                 tiket.setStatusTiket(true);
+                tiketVerification.setVerificationDateTime(LocalDateTime.now());
+                tiketVerificationRepository.save(tiketVerification);
                 Tiket item = tiketRepository.save(tiket);
                 TiketUserItemListResponse userRes = TiketUserItemListResponse.builder().namaUser(item.getUser().getName()).uuid(item.getUser().getUuid()).build();
                 return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), userRes, item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket(), item.getPaymentTransaction().getUuid());

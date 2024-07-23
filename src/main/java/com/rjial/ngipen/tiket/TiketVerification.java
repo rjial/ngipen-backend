@@ -3,6 +3,8 @@ package com.rjial.ngipen.tiket;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -16,6 +18,8 @@ public class TiketVerification {
     @NonNull
     @Column(name = "uuid_tiketverifikasi", unique = true, nullable = false)
     private UUID uuid;
+    @Column(name = "verificationdate_tiketverifikasi")
+    private LocalDateTime verificationDateTime;
     @NonNull
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "tiket_tiketverifikasi", referencedColumnName = "id_tiket")
