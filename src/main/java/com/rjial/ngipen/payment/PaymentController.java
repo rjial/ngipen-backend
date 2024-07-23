@@ -162,6 +162,25 @@ public class PaymentController {
         }
     }
 
+    @GetMapping("/event/{uuidEvent}/paymenttransaction/{uuidPt}/user")
+    public ResponseEntity<Response<User>> getUserByPaymentTransactionAndEvent(@AuthenticationPrincipal User user, @PathVariable("uuidEvent") String uuidEvent, @PathVariable("uuidPt") String uuidPt) {
+        Response<User> response = new Response<>();
+        try {
+            response.setData(tiketService.getUserFromPaymentTransaction(uuidPt, uuidEvent,user));
+            response.setMessage("Get user successfully");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (NotFoundException | NoSuchElementException e) {
+            response.setMessage("Failed to get user : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            response.setMessage("Failed to get user : " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     @GetMapping("/pay/{uuid}")
     public ResponseEntity<Response<PaymentOrderResponse>> doPaySnap(@AuthenticationPrincipal User user, @PathVariable("uuid") String uuidPaymentTransaction) {
         Response<PaymentOrderResponse> response = new Response<>();

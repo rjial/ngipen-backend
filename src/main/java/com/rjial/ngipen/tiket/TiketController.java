@@ -72,6 +72,29 @@ public class TiketController {
         return ResponseEntity.ok(tiketService.generateQrTiket(uuid, user));
     }
 
+    @GetMapping(value = "/{uuid}/user")
+    public ResponseEntity<Response<User>> getUserFromTiket(@PathVariable("uuid") String uuid, @AuthenticationPrincipal User user) {
+        Response<User> response = new Response<>();
+        try {
+            response.setData(tiketService.getUserFromTiket(uuid, user));
+            response.setMessage("User has been returned");
+            response.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            response.setMessage("Failed fetching user: " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (NoSuchElementException e) {
+            response.setMessage("User not found");
+            response.setStatusCode((long) HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (Exception e) {
+            response.setMessage("Failed fetching user: " + e.getMessage());
+            response.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     @PostMapping("/verify")
     public ResponseEntity<Response<TiketItemListResponse>> verifyTiket(@AuthenticationPrincipal User user, @RequestBody TiketVerificationRequest payload) throws BadRequestException, JsonProcessingException {
         Response<TiketItemListResponse> tiketResponse = new Response<>();

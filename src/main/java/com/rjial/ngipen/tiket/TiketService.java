@@ -192,25 +192,15 @@ public class TiketService {
                 Tiket tiket = tiketRepository.findByUuid(tiketVerification.getTiketToVerification().getUuid()).orElseThrow();
                 LocalDate tanggalAkhir = tiket.getJenisTiket().getEvent().getTanggalAkhir();
                 LocalDate tanggalAwal = tiket.getJenisTiket().getEvent().getTanggalAwal();
-                LocalTime waktuAwal =            tiket.getJenisTiket().getEvent().getWaktuAwal();
+                LocalTime waktuAwal = tiket.getJenisTiket().getEvent().getWaktuAwal();
                 LocalTime waktuAkhir = tiket.getJenisTiket().getEvent().getWaktuAkhir();
 
                 if (tanggalAkhir != null) {
-                    if ( LocalDate.now().isEqual(tanggalAwal) || LocalDate.now().isEqual(tanggalAkhir) || (LocalDate.now().isAfter(tanggalAwal) && LocalDate.now().isBefore(tanggalAkhir))) {
-                        if (LocalTime.now().isBefore(waktuAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi sebelum waktu event");
-                        if (LocalTime.now().isAfter(waktuAkhir)) throw new  BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
-                    } else {
-                        if (LocalDate.now().isBefore(tanggalAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi sebelum tanggal awal event");
-                        if (LocalDate.now().isAfter(tanggalAkhir)) throw new  BadRequestException("Tiket tidak bisa diverifikasi setelah tanggal akhir event");
-                    }
+                    if (LocalDate.now().isAfter(tanggalAkhir)) throw new BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
+                    if (LocalDate.now().isBefore(tanggalAwal)) throw new BadRequestException("Tiket tidak bisa diverifikasi sebelum waktu event");
                 } else {
-                    if (LocalDate.now().isEqual(tanggalAwal)) {
-                        if (LocalTime.now().isBefore(waktuAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi sebelum waktu event");
-                        if (LocalTime.now().isAfter(waktuAkhir)) throw new  BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
-                    } else {
-                        if (LocalDate.now().isBefore(tanggalAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi sebelum tanggal awal event");
-                        if (LocalDate.now().isAfter(tanggalAwal)) throw new  BadRequestException("Tiket tidak bisa diverifikasi setelah tanggal awal event");
-                    }
+                    if (LocalDate.now().isAfter(tanggalAwal)) throw new BadRequestException("Tiket tidak bisa diverifikasi setelah waktu event");
+                    if (LocalDate.now().isBefore(tanggalAwal)) throw new BadRequestException("Tiket tidak bisa diverifikasi sebelum waktu event");
                 }
                 if (tiket.getStatusTiket()) throw new BadRequestException("Anda tidak bisa menverifikasi tiket yang sudah terverifikasi");
                 tiket.setStatusTiket(true);
@@ -276,6 +266,41 @@ public class TiketService {
             return tiketRepository.findTiketByEventAndPaymentTransaction(paymentTransaction.getId(), eventByUuid.getId(), pageable);
         } else {
             throw new NoSuchFieldException("Event tidak ditemukan");
+        }
+    }
+
+    public User getUserFromPaymentTransaction(String uuidPt, String uuidEvent, User user) throws BadRequestException, NoSuchElementException {
+        PaymentTransaction paymentTransaction = paymentTransactionRepository.findPaymentTransactionByUuid(UUID.fromString(uuidPt)).orElseThrow();
+        Event eventByUuid = eventRepository.findEventByUuid(UUID.fromString(uuidEvent));
+        if (eventByUuid != null) {
+            if (user.getLevel() == Level.PEMEGANG_ACARA) {
+                if (eventByUuid.getPemegangEvent().getId().equals(user.getId())) {
+                    return paymentTransaction.getUser();
+                } else {
+                    throw new BadRequestException("Anda bukan pemegang event dari event ini");
+                }
+            } else if (user.getLevel() == Level.ADMIN) {
+                return paymentTransaction.getUser();
+            } else {
+                throw new BadRequestException("Anda bukan pemilik event dan admin");
+            }
+        } else {
+            throw new NoSuchElementException("Event tidak ditemukan");
+        }
+    }
+
+    public User getUserFromTiket(String uuidTiket, User user) throws BadRequestException {
+        Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuidTiket)).orElseThrow();
+        if (user.getLevel().equals(Level.ADMIN)) {
+            return tiket.getUser();
+        } else if (user.getLevel().equals(Level.PEMEGANG_ACARA)) {
+            if (tiket.getJenisTiket().getEvent().getPemegangEvent().getId().equals(user.getId())) {
+                return tiket.getUser();
+            } else {
+                throw new BadRequestException("Anda bukan pemegang event dari event ini");
+            }
+        } else {
+            throw new BadRequestException("Anda bukan pemilik event dan admin");
         }
     }
 
