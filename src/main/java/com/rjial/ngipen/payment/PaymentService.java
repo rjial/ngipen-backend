@@ -284,7 +284,7 @@ public class PaymentService {
             Event eventByUuid = eventRepository.findEventByUuid(UUID.fromString(uuidEvent));
             if (eventByUuid != null) {
                 if (user.getLevel().equals(Level.ADMIN)) {
-                    return paymentTransactionRepository.findFirstByIdAndEvent(user.getId(), eventByUuid.getId(), paymentTransaction.getId()).orElseThrow();
+                    return paymentTransaction;
                 }
                 if (user.getLevel().equals(Level.PEMEGANG_ACARA)) {
                     if (eventByUuid.getPemegangEvent().getId().equals(user.getId())) {
