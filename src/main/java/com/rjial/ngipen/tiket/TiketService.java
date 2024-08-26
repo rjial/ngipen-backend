@@ -28,7 +28,9 @@ import com.rjial.ngipen.payment.PaymentTransactionRepository;
 import io.jsonwebtoken.security.Keys;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.ServletContext;
 import jakarta.transaction.Transactional;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,13 +42,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.context.IContext;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import javax.crypto.*;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -84,6 +92,15 @@ public class TiketService {
     private EntityManager entityManager;
 
     private final Map<String, SseEmitter> sseEmitterMap = new ConcurrentHashMap<>();
+
+    @Autowired
+    private TemplateEngine templateEngine;
+
+    @Autowired
+    private SpringTemplateEngine springTemplateEngine;
+
+    @Autowired
+    private ServletContext servletContext;
 
 
     public TiketService(Environment env) {
@@ -183,6 +200,59 @@ public class TiketService {
         }
     }
 
+    public byte[] generateBarcodeTiket(String uuidTiket, User user) throws WriterException, IOException {
+        Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuidTiket)).orElseThrow();
+        int widthSize = 200;
+        int heightSize = 100;
+        if (tiket.getUser().getId().equals(user.getId())) {
+            String textValue = tiket.getTiketVerification().getBarcodetext();
+            Map<EncodeHintType, Object> hints = new EnumMap<EncodeHintType, Object>(EncodeHintType.class);
+            hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+            hints.put(EncodeHintType.MARGIN, 10);
+            BitMatrix bitMatrix = new MultiFormatWriter().encode(textValue, BarcodeFormat.CODE_39, widthSize, heightSize, hints);
+            BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
+            int scaledWidth = widthSize * 2;
+
+            BufferedImage scaledImage = new BufferedImage(scaledWidth, heightSize + 12, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = scaledImage.createGraphics();
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, scaledImage.getWidth(), scaledImage.getHeight());
+            g.dispose();
+            scaledImage.getGraphics().drawImage(image, 0, 0, scaledWidth, heightSize, null);
+            Graphics2D g2d = scaledImage.createGraphics();
+            g2d.setColor(Color.BLACK);
+            g2d.setFont(new Font("Arial", Font.PLAIN, 12)); // Adjust font as needed
+            int textX = (scaledWidth - g2d.getFontMetrics().stringWidth(textValue)) / 2;
+            int textY = heightSize + 10; // Adjust vertical offset as needed
+            g2d.drawString(textValue, textX, textY);
+            g2d.dispose();
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ImageIO.write(scaledImage, "jpeg", bos);
+            return bos.toByteArray();
+        } else {
+            BufferedImage image = new BufferedImage(widthSize, heightSize, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = image.createGraphics();
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, widthSize, heightSize);
+
+            Font font = new Font("Arial", Font.BOLD,20);
+            g.setFont(font);
+            g.setColor(Color.BLACK);
+
+            FontMetrics fm = g.getFontMetrics();
+            int x = (widthSize - fm.stringWidth("Failed!")) / 2;
+            int y = (heightSize - fm.getHeight()) / 2 + fm.getAscent();
+
+            g.drawString("Failed!", x, y);
+            g.dispose();
+//            log.error(e.getMessage(), e);
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ImageIO.write(image, "jpeg", bos);
+            return bos.toByteArray();
+        }
+    }
+
     public TiketItemListResponse verifyTiket(TiketVerificationRequest payload, User user) throws BadRequestException, JsonProcessingException, JWTVerificationException {
         DecodedJWT decodedJWT = jwtVerifier.verify(payload.getPayload());
         String tiketVerification1 = decodedJWT.getClaim("tiketVerification").asString();
@@ -208,18 +278,31 @@ public class TiketService {
                 tiketVerification.setVerificationDateTime(LocalDateTime.now());
                 tiketVerificationRepository.save(tiketVerification);
                 Tiket item = tiketRepository.save(tiket);
-                TiketUserItemListResponse userRes = TiketUserItemListResponse.builder().namaUser(item.getUser().getName()).uuid(item.getUser().getUuid()).build();
-                return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), userRes, item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket(), item.getPaymentTransaction().getUuid());
+                return getTiketItemListResponse(tiket);
+//                return new TiketItemListResponse(item.getUuid(), item.getStatusTiket(), userRes, item.getJenisTiket().getNama(), item.getJenisTiket().getEvent().getName(), item.getJenisTiket().getEvent().getTanggalAwal(), item.getJenisTiket().getHarga(), item.getJenisTiket().getEvent().getWaktuAwal(), item.getJenisTiket().getEvent().getWaktuAkhir(), item.getJenisTiket().getEvent().getLokasi(), item.getStatusTiket(), item.getPaymentTransaction().getUuid());
             } else {
                 throw new BadRequestException("Event tidak ditemukan");
             }
     }
 
+    public TiketItemListResponse qrScanTiket(TiketVerificationRequest payload, User user) throws BadRequestException, NoSuchElementException {
+        DecodedJWT decodedJWT = jwtVerifier.verify(payload.getPayload());
+        String tiketVerification1 = decodedJWT.getClaim("tiketVerification").asString();
+        TiketVerification tiketVerification = tiketVerificationRepository.findByUuid(UUID.fromString(tiketVerification1)).orElseThrow();
+        log.info(tiketVerification.toString());
+        Event eventByUuid = eventRepository.findEventByUuid(tiketVerification.getTiketToVerification().getJenisTiket().getEvent().getUuid());
+        if (eventByUuid != null) {
+            Tiket tiket = tiketRepository.findByUuid(tiketVerification.getTiketToVerification().getUuid()).orElseThrow();
+            return getTiketItemListResponse(tiket);
+        } else {
+            throw new NoSuchElementException("Event tidak ditemukan");
+        }
+    }
+
     public TiketItemListResponse getTiketFromUUID(String uuid, User user) {
         try {
             Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
-            TiketUserItemListResponse userRes = TiketUserItemListResponse.builder().namaUser(tiket.getUser().getName()).uuid(tiket.getUser().getUuid()).build();
-            TiketItemListResponse tiketItemListResponse = new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), userRes, tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir(), tiket.getJenisTiket().getEvent().getLokasi(), tiket.getStatusTiket(), tiket.getPaymentTransaction().getUuid());
+            TiketItemListResponse tiketItemListResponse = getTiketItemListResponse(tiket);
             if (user.getLevel().equals(Level.PEMEGANG_ACARA)) {
                 if (tiket.getJenisTiket().getEvent().getPemegangEvent().getId().equals(user.getId())) {
                     return tiketItemListResponse;
@@ -242,23 +325,37 @@ public class TiketService {
         }
     }
 
-    public Tiket verifyTiketByUUID(String uuid, int status, User user) throws BadRequestException {
-        Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElseThrow();
+    private static @NonNull TiketItemListResponse getTiketItemListResponse(Tiket tiket) {
+        TiketUserItemListResponse userRes = TiketUserItemListResponse.builder().namaUser(tiket.getUser().getName()).uuid(tiket.getUser().getUuid()).alamat(tiket.getUser().getAddress()).email(tiket.getUser().getEmail()).nohp(tiket.getUser().getHp()).build();
+        return new TiketItemListResponse(tiket.getUuid(), tiket.getStatusTiket(), userRes, tiket.getJenisTiket().getNama(), tiket.getJenisTiket().getEvent().getName(), tiket.getJenisTiket().getEvent().getTanggalAwal(), tiket.getJenisTiket().getHarga(), tiket.getJenisTiket().getEvent().getWaktuAwal(), tiket.getJenisTiket().getEvent().getWaktuAkhir(), tiket.getJenisTiket().getEvent().getLokasi(), tiket.getStatusTiket(), tiket.getPaymentTransaction().getUuid());
+    }
+
+    public TiketItemListResponse verifyTiketByUUID(String uuid, int status, User user) throws BadRequestException {
+        Tiket tiket = tiketRepository.findByUuid(UUID.fromString(uuid)).orElse(tiketVerificationRepository.findByBarcodeText(uuid).orElseThrow().getTiketToVerification());
+        Tiket tiketReturn = null;
         if (user.getLevel() == Level.PEMEGANG_ACARA) {
             Event event = tiket.getJenisTiket().getEvent();
             if (event.getPemegangEvent().getId().equals(user.getId())) {
-                log.info("status : " + status);
+//                log.info("status : " + status);
+                if (status == 1) {
+                    if (tiket.getStatusTiket()) throw new BadRequestException("Anda tidak bisa menverifikasi tiket yang sudah terverifikasi");
+                }
                 tiket.setStatusTiket(status == 1);
-                return tiketRepository.save(tiket);
+                tiketReturn = tiketRepository.save(tiket);
             } else {
                 throw new BadRequestException("Anda bukan pemilik event dari tiket ini!");
             }
         } else if (user.getLevel() == Level.ADMIN) {
+//            if (tiket.getStatusTiket())
+            if (status == 1) {
+                if (tiket.getStatusTiket()) throw new BadRequestException("Anda tidak bisa menverifikasi tiket yang sudah terverifikasi");
+            }
             tiket.setStatusTiket(status == 1);
-            return tiketRepository.save(tiket);
+            tiketReturn = tiketRepository.save(tiket);
         } else {
             throw new BadRequestException("Anda bukan pemegang event dan admin!");
         }
+        return getTiketItemListResponse(tiketReturn);
     }
 
     public Page<Tiket> getTiketsFromPaymentTransaction(String uuidPt, String uuidEvent, int page, int size) throws NoSuchFieldException {
@@ -326,6 +423,30 @@ public class TiketService {
         }
         return false;
     }
+
+//    public byte[] generateTiketPdf(String uuid) throws DocumentException {
+//        StringWriter writer = new StringWriter();
+//        String baseUrl = servletContext.getContextPath();
+//        final Context context = new Context();
+//        context.setVariable("tiketTitle", "Lorem Ipsum");
+//        context.setVariable("tiketCategory", "Lorem Ipsum");
+//        context.setVariable("tiketDateTime", "Lorem Ipsum");
+//        context.setVariable("tiketLocation", "Lorem Ipsum");
+//        context.setVariable("tiketTotalCharge", "Lorem Ipsum");
+//        context.setVariable("tiketStatus", "Lorem Ipsum");
+//        context.setVariable("tiketBarcodeUrl", baseUrl + "/tiket/ef6b9745-f339-4488-8bbc-270a6f3a7228/barcode");
+//        log.info(baseUrl + "/tiket/ef6b9745-f339-4488-8bbc-270a6f3a7228/barcode");
+//        springTemplateEngine.process("tiket_template", context, writer);
+//
+//        ITextRenderer renderer = new ITextRenderer();
+//        renderer.setDocumentFromString(writer.toString());
+//        renderer.layout();
+//
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//        renderer.createPDF(outputStream);
+//
+//        return outputStream.toByteArray();
+//    }
 
 //    public SseEmitter getStatusTicket(String uuidTicket, User user) throws NoSuchElementException, BadRequestException {
 //        final SseEmitter emitter = new SseEmitter();

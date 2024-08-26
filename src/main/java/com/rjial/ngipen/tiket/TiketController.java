@@ -1,6 +1,7 @@
 package com.rjial.ngipen.tiket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.zxing.WriterException;
 import com.rjial.ngipen.auth.User;
 import com.rjial.ngipen.common.Response;
 import jakarta.persistence.EntityManager;
@@ -72,6 +73,15 @@ public class TiketController {
         return ResponseEntity.ok(tiketService.generateQrTiket(uuid, user));
     }
 
+    @GetMapping(value = "/{uuid}/barcode", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> getTiketBarcode(@PathVariable("uuid") String uuid, @AuthenticationPrincipal User user) throws IOException {
+        try {
+            return ResponseEntity.ok(tiketService.generateBarcodeTiket(uuid, user));
+        } catch (WriterException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @GetMapping(value = "/{uuid}/user")
     public ResponseEntity<Response<User>> getUserFromTiket(@PathVariable("uuid") String uuid, @AuthenticationPrincipal User user) {
         Response<User> response = new Response<>();
@@ -95,6 +105,11 @@ public class TiketController {
         }
     }
 
+//    @GetMapping(value = "/{uuid}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+//    public ResponseEntity<byte[]> generateTiketPdf(@PathVariable("uuid") String uuid) throws DocumentException {
+//        return ResponseEntity.ok(tiketService.generateTiketPdf(uuid));
+//    }
+
     @PostMapping("/verify")
     public ResponseEntity<Response<TiketItemListResponse>> verifyTiket(@AuthenticationPrincipal User user, @RequestBody TiketVerificationRequest payload) throws BadRequestException, JsonProcessingException {
         Response<TiketItemListResponse> tiketResponse = new Response<>();
@@ -115,12 +130,31 @@ public class TiketController {
         }
     }
 
+    @PostMapping("/qrscan")
+    public ResponseEntity<Response<TiketItemListResponse>> scanQrTiket(@AuthenticationPrincipal User user, @RequestBody TiketVerificationRequest payload) {
+        Response<TiketItemListResponse> tiketResponse = new Response<>();
+        try {
+            tiketResponse.setData(tiketService.qrScanTiket(payload, user));
+            tiketResponse.setMessage("Tiket berhasil discan");
+            tiketResponse.setStatusCode((long) HttpStatus.OK.value());
+            return ResponseEntity.ok(tiketResponse);
+        } catch (NoSuchElementException e) {
+            tiketResponse.setMessage(e.getMessage());
+            tiketResponse.setStatusCode((long) HttpStatus.NOT_FOUND.value());
+            return new ResponseEntity<>(tiketResponse, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            tiketResponse.setMessage(e.getMessage());
+            tiketResponse.setStatusCode((long) HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return new ResponseEntity<>(tiketResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/verify/{uuidTiket}")
-    public ResponseEntity<Response<Tiket>> verifyTiketByUUIDTiket(@AuthenticationPrincipal User user, @PathVariable("uuidTiket") String uuid, @RequestParam("status") int status) {
-        Response<Tiket> tiketResponse = new Response<>();
+    public ResponseEntity<Response<TiketItemListResponse>> verifyTiketByUUIDTiket(@AuthenticationPrincipal User user, @PathVariable("uuidTiket") String uuid, @RequestParam("status") int status) {
+        Response<TiketItemListResponse> tiketResponse = new Response<>();
         try {
             tiketResponse.setData(tiketService.verifyTiketByUUID(uuid, status, user));
-            tiketResponse.setMessage("Tiket has been returned");
+            tiketResponse.setMessage("Tiket successfully verified!");
             tiketResponse.setStatusCode((long) HttpStatus.OK.value());
             return ResponseEntity.ok(tiketResponse);
         } catch (BadRequestException e) {

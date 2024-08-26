@@ -55,6 +55,7 @@ public class PaymentService {
 
     @Autowired
     private PaymentMidtransComponent paymentMidtransComponent;
+    private static final String CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     public Response<PaymentOrderResponse> payment(PaymentOrderRequest request, User user) {
         List<Checkout> checkouts = new ArrayList<>();
@@ -229,6 +230,7 @@ public class PaymentService {
         return response;
     }
     private List<Tiket> saveTiket(PaymentHistory paymentHistory, PaymentTransaction paymentTransactionByUuid, int total) {
+        Random random = new Random();
         List<Tiket> allByPaymentTransaction = tiketRepository.findAllByPaymentTransaction(paymentTransactionByUuid);
         if (allByPaymentTransaction.size() == total) {
             return new ArrayList<>();
@@ -244,6 +246,12 @@ public class PaymentService {
             tiket.setStatusTiket(false);
             TiketVerification tiketVerification = new TiketVerification();
             tiketVerification.setUuid(UUID.randomUUID());
+            StringBuilder sbBarcode = new StringBuilder();
+            for (int ii = 0; ii < 16; ii++) {
+                int index = random.nextInt(CHARACTERS.length());
+                sbBarcode.append(CHARACTERS.charAt(index));
+            }
+            tiketVerification.setBarcodetext(sbBarcode.toString());
             tiketVerification.setTiketToVerification(tiket);
             tiket.setTiketVerification(tiketVerificationRepository.save(tiketVerification));
             Tiket savedTiket = tiketRepository.save(tiket);

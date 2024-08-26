@@ -66,11 +66,6 @@ public class PaymentTransaction {
     @JsonSerialize(using = UserSerializer.class)
     private User user;
 
-    @OneToOne
-    @JoinColumn(name = "id_paymentgateway")
-    @JsonIgnore
-    private PaymentGatewayInformation paymentGatewayInformation;
-
     @OneToMany(mappedBy = "paymentTransaction")
     @JsonIgnore
     private List<Tiket> tikets;

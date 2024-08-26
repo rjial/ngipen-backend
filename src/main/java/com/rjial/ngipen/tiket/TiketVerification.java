@@ -18,6 +18,8 @@ public class TiketVerification {
     @NonNull
     @Column(name = "uuid_tiketverifikasi", unique = true, nullable = false)
     private UUID uuid;
+    @Column(name = "barcodetext_tiketverifikasi", unique = true, nullable = false)
+    private String barcodetext;
     @Column(name = "verificationdate_tiketverifikasi")
     private LocalDateTime verificationDateTime;
     @NonNull

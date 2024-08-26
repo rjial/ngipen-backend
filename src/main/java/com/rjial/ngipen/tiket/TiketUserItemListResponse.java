@@ -14,4 +14,7 @@ import java.util.UUID;
 public class TiketUserItemListResponse {
     private UUID uuid;
     private String namaUser;
+    private String email;
+    private String nohp;
+    private String alamat;
 }

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Event Ticket Information</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+<h2>Event
+    Ticket Information</h2>
+<div style="display: flex; flex-direction: row">
+    <table>
+        <tr>
+            <th>Title</th>
+            <td th:text="${tiketTitle}"></td>
+        </tr>
+        <tr>
+            <th>Category</th>
+            <td th:text="${tiketCategory}"></td>
+        </tr>
+        <tr>
+            <th>Date and Time</th>
+            <td th:text="${tiketDateTime}"></td>
+        </tr>
+        <tr>
+            <th>Location</th>
+            <td th:text="${tiketLocation}"></td>
+        </tr>
+        <tr>
+            <th>Total Charge</th>
+            <td th:text="${tiketTotalCharge}"></td>
+        </tr>
+        <tr>
+            <th>Status</th>
+            <td th:text="${tiketStatus}"></td>
+        </tr>
+    </table>
+    <div style="padding-right: 1rem; padding-left: 1rem;">
+        <img th:src="${tiketBarcodeUrl}" alt=""/>
+    </div>
+</div>
+</body>
+</html>

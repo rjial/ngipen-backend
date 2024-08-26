@@ -17,8 +17,8 @@ import java.util.UUID;
 public interface TiketRepository extends JpaRepository<Tiket, Long> {
 
     List<Tiket> findAllByUser(User user);
-    @Query("SELECT t FROM Tiket t JOIN t.paymentTransaction pt ORDER BY pt.date DESC")
-    Page<Tiket> findAllByUser(User user, Pageable pageable);
+    @Query("SELECT t FROM Tiket t JOIN t.paymentTransaction pt JOIN t.user u WHERE u = :user ORDER BY pt.date DESC")
+    Page<Tiket> findAllByUser(@Param("user") User user, Pageable pageable);
     Optional<Tiket> findByUuid(UUID uuid);
     List<Tiket> findAllByPaymentTransaction(PaymentTransaction paymentTransaction);
     @Query("SELECT t FROM Tiket t JOIN t.jenisTiket jt JOIN jt.event e WHERE e = :event")
